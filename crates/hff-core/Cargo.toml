@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["All8Up <all8up@gmail.com>"]
 license-file = "LICENSE"
-description = "Hierarchical File Format"
+description = "Hierarchical File Format: core structure"
 repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 

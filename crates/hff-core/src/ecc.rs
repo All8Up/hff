@@ -16,7 +16,7 @@ pub struct Ecc(
 
 impl Debug for Ecc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "Ecc(\"{}\")", self.to_string())
     }
 }
 
@@ -161,12 +161,21 @@ impl ToString for Ecc {
     fn to_string(&self) -> String {
         let mut name = String::with_capacity(8);
         let code = self.as_slice();
-        for i in 0..8 {
-            if code[i] == 0 {
-                break;
-            } else {
-                name.push(code[i] as char);
+        if self.is_valid() {
+            for i in 0..8 {
+                if code[i].is_ascii() {
+                    if code[i] == 0 {
+                        break;
+                    } else {
+                        name.push(code[i] as char);
+                    }
+                } else {
+                    name = format!("{}", self.0);
+                    break;
+                }
             }
+        } else {
+            name = "INVALID".into();
         }
         name
     }

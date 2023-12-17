@@ -1,12 +1,13 @@
 [package]
-name = "hff-std"
+name = "hff-tokio"
 version = "0.1.0"
 edition = "2021"
 authors = ["All8Up <all8up@gmail.com>"]
 license-file = "LICENSE"
-description = "Hierarchical File Format: synchronous support"
+description = "Hierarchical File Format: tokio support."
 repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 
 [dependencies]
+hff-std = { path = "./../hff-std", version = "0.1.0" }
 hff-core = { path = "./../hff-core", version = "0.1.0" }
