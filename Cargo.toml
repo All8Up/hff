@@ -8,7 +8,7 @@ repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 
 [dependencies]
-hff-core = { path = "./crates/hff-core" }
+hff-core = { path = "./crates/hff-core", version = "0.1.0" }
 thiserror = "1.0.50"
 
 # Support for async-std.
