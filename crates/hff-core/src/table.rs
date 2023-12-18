@@ -78,9 +78,19 @@ impl Table {
         self.sibling
     }
 
+    /// Get the sibling index mutably.
+    pub fn sibling_mut(&mut self) -> &mut u32 {
+        &mut self.sibling
+    }
+
     /// Get the index of the first chunk owned by this table.
     pub fn chunk_index(&self) -> u32 {
         self.chunk_index
+    }
+
+    /// Get the chunk index mutably.
+    pub fn chunk_index_mut(&mut self) -> &mut u32 {
+        &mut self.chunk_index
     }
 
     /// Get the number of chunks owned by this table.

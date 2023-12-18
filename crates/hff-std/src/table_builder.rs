@@ -12,12 +12,15 @@ impl TableBuilder {
     }
 
     /// Add a child table to the current table.
-    pub fn table(&mut self, content: TableDesc) {
+    pub fn table(mut self, content: TableDesc) -> Self {
         self.0.push_table(content);
+        self
     }
 
     /// Add a chunk entry to the current table.
-    pub fn chunk(&mut self) {}
+    pub fn chunk(mut self) -> Self {
+        self
+    }
 
     /// End building the table.
     pub fn end(self) -> TableDesc {

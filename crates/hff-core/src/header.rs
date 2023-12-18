@@ -130,6 +130,7 @@ impl Header {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{NE, OP};
 
     #[test]
     fn test_struct_layout() {
@@ -144,5 +145,32 @@ mod tests {
         assert!(!Header::new(Ecc::new("test"), 0, 0)
             .swap_bytes()
             .is_native_endian());
+    }
+
+    #[test]
+    fn serialization() {
+        {
+            let header = Header::new("Test".into(), 1, 2);
+            let mut buffer = vec![];
+            assert!(header.write::<NE>(&mut buffer).is_ok());
+            let dup = Header::read(&mut buffer.as_slice()).unwrap();
+            assert_eq!(dup.magic, Ecc::HFF_MAGIC);
+            assert_eq!(dup.version, Semver::new(0, 1, 0));
+            assert_eq!(dup.content, Ecc::new("Test"));
+            assert_eq!(dup.table_count, 1);
+            assert_eq!(dup.chunk_count, 2);
+        }
+
+        {
+            let header = Header::new("Test".into(), 1, 2);
+            let mut buffer = vec![];
+            assert!(header.write::<OP>(&mut buffer).is_ok());
+            let dup = Header::read(&mut buffer.as_slice()).unwrap();
+            assert_eq!(dup.magic, Ecc::HFF_MAGIC);
+            assert_eq!(dup.version, Semver::new(0, 1, 0));
+            assert_eq!(dup.content, Ecc::new("Test"));
+            assert_eq!(dup.table_count, 1);
+            assert_eq!(dup.chunk_count, 2);
+        }
     }
 }
