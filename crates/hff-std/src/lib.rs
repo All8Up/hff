@@ -4,6 +4,9 @@ use std::mem::size_of;
 
 use hff_core::{Ecc, Header, Result, Table, NE};
 
+mod data_source;
+pub use data_source::DataSource;
+
 mod chunk_desc;
 pub use chunk_desc::ChunkDesc;
 

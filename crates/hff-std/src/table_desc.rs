@@ -1,5 +1,24 @@
 use super::ChunkDesc;
 use hff_core::{Ecc, Table};
+use std::io::Read;
+
+/// Helper to track and build chunks.
+pub struct DataBuilder {
+    /// Chunks.
+    chunks: Vec<(Box<dyn Read>, usize)>,
+}
+
+impl DataBuilder {
+    /// Create an empty instance.
+    pub fn new() -> Self {
+        Self { chunks: vec![] }
+    }
+
+    /// Push a chunk onto the builder.
+    pub fn push(&mut self, reader: Box<dyn Read>, size: usize) {
+        self.chunks.push((reader, size));
+    }
+}
 
 /// A table description.
 #[derive(Debug, Clone)]
@@ -92,7 +111,7 @@ impl TableDesc {
             .sibling(0)
             // Our count of chunks.
             .chunk_count(self.chunk_count() as u32)
-            // Our chunks always start at 0.
+            // Our chunks (and metadata) always start at 0.
             .chunk_index(0)
             .end();
 
