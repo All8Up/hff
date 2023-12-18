@@ -50,6 +50,35 @@ impl TableDesc {
 
     /// Flatten the table hierarchy.
     pub fn flatten_tables(&self) -> (Table, Vec<Table>) {
+        // Split the child and its related children.
+        let mut parents = vec![];
+        let mut child_groups = vec![];
+        for child in &self.children {
+            // Flatten each child.
+            let (parent, children) = child.flatten_tables();
+            parents.push(parent);
+            child_groups.push(children);
+        }
+
+        // Update the parent siblings.
+        let count = parents.len();
+        let mut child_count = 0;
+        for (index, parent) in parents.iter_mut().enumerate() {
+            let has_siblings = index < count - 1;
+            child_count += child_groups[index].len();
+            if has_siblings {
+                // + 1 for the parent itself and 1 for each child.
+                *parent.sibling_mut() = (1 + child_count) as u32;
+            }
+        }
+
+        // Flatten the parents with children following each.
+        let mut children = Vec::<Table>::new();
+        for (child, mut nested) in parents.into_iter().zip(child_groups) {
+            children.push(child);
+            children.append(&mut nested);
+        }
+
         let mut parent = Table::create()
             // Content identification.
             .primary(self.primary)
@@ -59,7 +88,7 @@ impl TableDesc {
             .metadata_offset(0)
             // Our count of children.
             .child_count(self.children.len() as u32)
-            // We have no immediate siblings.
+            // We have no siblings at this time.
             .sibling(0)
             // Our count of chunks.
             .chunk_count(self.chunk_count() as u32)
@@ -67,6 +96,6 @@ impl TableDesc {
             .chunk_index(0)
             .end();
 
-        (parent, vec![])
+        (parent, children)
     }
 }

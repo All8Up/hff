@@ -73,7 +73,8 @@ impl Table {
         self.child_count
     }
 
-    /// Get the index of the next sibling table.
+    /// Get the index offset from this entry to its sibling.
+    /// Zero if there is no sibling.
     pub fn sibling(&self) -> u32 {
         self.sibling
     }
