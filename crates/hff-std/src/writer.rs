@@ -1,5 +1,5 @@
-use crate::TableDesc;
-use hff_core::{ByteOrder, Ecc, Header, Result, Table};
+use crate::{DataBuilder, TableDesc};
+use hff_core::{ByteOrder, Chunk, Ecc, Header, Result, Table};
 
 /// Write the table structure to an HFF container.
 /// NOTE: This does not support seek streams and as
@@ -21,35 +21,34 @@ pub fn write_stream<E: ByteOrder>(
     let table_count = content.table_count();
     let chunk_count = content.chunk_count();
     let header = Header::new(content_type.into(), table_count as u32, chunk_count as u32);
-    println!("{:#?}", header);
 
     // Write the header.
     header.write::<E>(writer)?;
     // Write the tables.
-    let flattened = content.flatten_tables()?;
-    println!("{:#?}", flattened);
-    //write_tables::<E>(flattened.root, flattened.children, writer)?;
-    // Write the chunks.
+    let (tables, data, chunks) = content.flatten_tables()?.finish();
 
+    write_tables::<E>(tables, writer)?;
+    write_chunks::<E>(chunks, writer)?;
+    write_data(data, writer)?;
+
+    writer.flush()?;
     Ok(())
 }
 
-fn write_tables<E: ByteOrder>(
-    parent: Table,
-    children: Vec<Table>,
-    writer: &mut dyn std::io::Write,
-) -> Result<()> {
-    println!("------------ Writing tables.");
-    // Write the parent table.
-    println!("{}: {:#?}", 0, parent);
-    parent.write::<E>(writer)?;
-
-    // Write the children.
-    for (index, table) in children.iter().enumerate() {
-        println!("{}: {:#?}", index + 1, table);
-    }
-    for table in children {
+fn write_tables<E: ByteOrder>(tables: Vec<Table>, writer: &mut dyn std::io::Write) -> Result<()> {
+    for table in tables {
         table.write::<E>(writer)?;
     }
     Ok(())
+}
+
+fn write_chunks<E: ByteOrder>(chunks: Vec<Chunk>, writer: &mut dyn std::io::Write) -> Result<()> {
+    for chunk in chunks {
+        chunk.write::<E>(writer)?;
+    }
+    Ok(())
+}
+
+fn write_data(data: DataBuilder, writer: &mut dyn std::io::Write) -> Result<()> {
+    data.write(writer)
 }

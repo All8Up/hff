@@ -3,7 +3,7 @@
 use hff_core::{Ecc, Error, Result};
 
 mod data_source;
-pub use data_source::DataSource;
+pub use data_source::{DataSource, StdWriter};
 
 mod chunk_desc;
 pub use chunk_desc::ChunkDesc;
@@ -96,7 +96,25 @@ mod tests {
             let mut buffer = vec![];
 
             assert!(write_stream::<hff_core::NE>("Test", table, &mut buffer).is_ok());
-            //assert!(read_stream(&mut buffer.as_slice()).is_ok());
+
+            // Read it back in and iterate.
+            let hff = read_stream(&mut buffer.as_slice()).unwrap();
+            let root = hff.iter().next().unwrap();
+            println!("Root: {:?}", root);
+
+            // Check the content of root is as expected.
+            assert_eq!(root.primary(), "Test".into());
+            assert_eq!(root.secondary(), "TestSub".into());
+            assert_eq!(root.child_count(), 2);
+            assert_eq!(root.chunk_count(), 6);
+
+            // Check that we get a proper child iterator from the root.
+            let mut root_children = root.iter();
+            let c0 = root_children.next().unwrap();
+            println!("c0: {:?}", c0);
+            let c4 = root_children.next().unwrap();
+            println!("c4: {:?}", c4);
+            assert_eq!(root_children.next(), None);
         }
 
         // {
@@ -106,7 +124,5 @@ mod tests {
         //     assert!(write_stream::<hff_core::OP>("Test", table, &mut buffer).is_ok());
         //     assert!(read_stream(&mut buffer.as_slice()).is_ok());
         // }
-
-        assert!(false);
     }
 }

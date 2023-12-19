@@ -1,10 +1,13 @@
 use crate::{Ecc, Result};
 use byteorder::{ByteOrder, ReadBytesExt, WriteBytesExt};
-use std::io::{Read, Write};
+use std::{
+    fmt::Debug,
+    io::{Read, Write},
+};
 
 /// Specifies a chunk of data within the file.
 #[repr(C, align(16))]
-#[derive(Debug, Copy, Clone, Hash)]
+#[derive(Copy, Clone, PartialEq, Hash)]
 pub struct Chunk {
     /// Primary content type of the chunk data.
     primary: Ecc,
@@ -14,6 +17,19 @@ pub struct Chunk {
     length: u64,
     /// Offset of the data from the start of the file.
     offset: u64,
+}
+
+impl Debug for Chunk {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "({}:{}) - {}, {}",
+            self.primary.to_string(),
+            self.secondary.to_string(),
+            self.length,
+            self.offset
+        )
+    }
 }
 
 impl Chunk {
@@ -50,6 +66,11 @@ impl Chunk {
     /// Get the offset of the content.
     pub fn offset(&self) -> u64 {
         self.offset
+    }
+
+    /// Get the offset mutably.
+    pub fn offset_mut(&mut self) -> &mut u64 {
+        &mut self.offset
     }
 
     /// Read a table from the given stream.

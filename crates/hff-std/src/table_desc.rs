@@ -1,7 +1,6 @@
-use std::fmt::Debug;
-
 use crate::{ChunkDesc, DataBuilder, DataSource};
 use hff_core::{Chunk, Ecc, Error, Result, Table};
+use std::fmt::Debug;
 
 /// Helper structure to build a flattened table tree.
 pub struct Flattened {
@@ -19,7 +18,14 @@ pub struct Flattened {
 impl Debug for Flattened {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut s = f.debug_struct("Flattened");
-        s.field("Root", &self.root);
+        s.field("0: ", &self.root);
+        for (index, child) in self.children.iter().enumerate() {
+            s.field(&(index + 1).to_string(), &child);
+        }
+        for (index, chunk) in self.chunks.iter().enumerate() {
+            s.field(&index.to_string(), chunk);
+        }
+        s.field("Data", &self.data_builder);
         s.finish()
     }
 }
@@ -50,6 +56,19 @@ impl Flattened {
             data_builder,
             chunks,
         }
+    }
+
+    /// Finish the structure.
+    pub fn finish(mut self) -> (Vec<Table>, DataBuilder, Vec<Chunk>) {
+        // Adjust root to take into account for itself in regards to siblings.
+        *self.root.sibling_mut() += 1;
+
+        // Finish flattening.
+        let mut tables = vec![self.root];
+        tables.extend(self.children);
+
+        // Return it all.
+        (tables, self.data_builder, self.chunks)
     }
 }
 
@@ -170,8 +189,10 @@ impl TableDesc {
             // Flatten the children completely.
             let mut child_data = child.flatten_tables()?;
 
+            // Update the root sibling.
+            *child_data.root.sibling_mut() = (1 + child_data.children.len()) as u32;
+
             // Offset and push the root.
-            let root_chunks = child_data.root.chunk_count();
             child_data
                 .root
                 .offset(data_builder.size_bytes(), chunks.len() as u32);
@@ -179,10 +200,15 @@ impl TableDesc {
 
             // Offset the children.
             for table in &mut child_data.children {
-                table.offset(data_builder.size_bytes(), chunks.len() as u32 + root_chunks);
+                table.offset(data_builder.size_bytes(), chunks.len() as u32);
             }
             // Append the children.
             children.append(&mut child_data.children);
+
+            // Update the child chunk offsets.
+            for chunk in &mut child_data.chunks {
+                *chunk.offset_mut() += data_builder.size_bytes();
+            }
 
             // Append the child chunks to the total chunks.
             chunks.append(&mut child_data.chunks);
@@ -198,10 +224,9 @@ impl TableDesc {
                 .metadata_length(metadata_length)
                 .metadata_offset(0)
                 .child_count(child_count as u32)
-                .sibling(0)
+                .sibling(children.len() as u32)
                 .chunk_count(chunk_count as u32)
-                // Chunks start after the metadata.
-                .chunk_index(if metadata_length > 0 { 1 } else { 0 })
+                .chunk_index(0)
                 .end(),
             children,
             chunks,

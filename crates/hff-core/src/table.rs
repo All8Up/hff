@@ -1,11 +1,14 @@
 use crate::{Ecc, Result};
 use byteorder::{ByteOrder, ReadBytesExt, WriteBytesExt};
-use std::io::{Read, Write};
+use std::{
+    fmt::Debug,
+    io::{Read, Write},
+};
 
 /// A table entry in the file format.
 /// Tables are 48 bytes in length when stored.
 #[repr(C, align(16))]
-#[derive(Debug, Copy, Eq, PartialEq, Clone, Hash)]
+#[derive(Copy, Eq, PartialEq, Clone, Hash)]
 pub struct Table {
     /// The primary content type of the table.
     primary: Ecc,
@@ -24,6 +27,22 @@ pub struct Table {
     chunk_index: u32,
     /// The number of chunks associated with this table or zero.
     chunk_count: u32,
+}
+
+impl Debug for Table {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "(\"{}\":\"{}\"): meta \"{}\", sib: {}, children: {}, chunks(count: {}, index: {})",
+            self.primary.to_string(),
+            self.secondary.to_string(),
+            self.metadata_length > 0,
+            self.sibling,
+            self.child_count,
+            self.chunk_count,
+            self.chunk_index
+        )
+    }
 }
 
 impl Default for Table {
@@ -73,7 +92,9 @@ impl Table {
         if self.metadata_length > 0 {
             self.metadata_offset += data_length;
         }
-        self.chunk_index += chunk_count;
+        if self.chunk_count > 0 {
+            self.chunk_index += chunk_count;
+        }
     }
 
     /// Get the child table count.
