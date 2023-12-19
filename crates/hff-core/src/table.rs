@@ -68,6 +68,14 @@ impl Table {
         self.metadata_offset
     }
 
+    /// Helper to collapse tables into parents.
+    pub fn offset(&mut self, data_length: u64, chunk_count: u32) {
+        if self.metadata_length > 0 {
+            self.metadata_offset += data_length;
+        }
+        self.chunk_index += chunk_count;
+    }
+
     /// Get the child table count.
     pub fn child_count(&self) -> u32 {
         self.child_count
@@ -87,11 +95,6 @@ impl Table {
     /// Get the index of the first chunk owned by this table.
     pub fn chunk_index(&self) -> u32 {
         self.chunk_index
-    }
-
-    /// Get the chunk index mutably.
-    pub fn chunk_index_mut(&mut self) -> &mut u32 {
-        &mut self.chunk_index
     }
 
     /// Get the number of chunks owned by this table.

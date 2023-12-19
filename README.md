@@ -4,7 +4,7 @@ A hierarchical file format intended to be a non-opinionated container.
 
 **Goals**:
 
-* Keep it simple and not much more complicated than something like IFF/RIFF formats.
+* Keep it simple and not much more complicated than something like IFF/RIFF formats.  Building tables is unfortunately a little involved, but reading seems to be pretty simple.
 * Don't care what is put into the 'chunks' within the file.  With only two exceptions, there are no predefined identifiers or requirements.
 * Move discoverability to the front of the format so scanning the content to find things is not needed.  Specifically, the primary goal is a container for randomly accessing the content instead of being read in all at once.  (The specific intention was an archive format somewhat like ZIP/7z etc but with different goals.)
 * All lengths and sizes are u64 so there are no 4GB limitations.

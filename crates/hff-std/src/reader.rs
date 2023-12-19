@@ -1,5 +1,4 @@
-use super::TableDesc;
-use hff_core::{ByteOrder, Ecc, Header, Result, Table, NE};
+use hff_core::{ByteOrder, Header, Result, Table, NE};
 use std::mem::size_of;
 
 /// Read a HFF from the given stream.
@@ -9,7 +8,7 @@ pub fn read_stream(reader: &mut dyn std::io::Read) -> Result<()> {
     if header.is_native_endian() {
         //
         println!("Native endian.");
-        let tables = read_tables::<NE>(reader, header.table_count())?;
+        let _tables = read_tables::<NE>(reader, header.table_count())?;
     } else {
         //
         println!("Opposing endian.");
