@@ -5,7 +5,7 @@ A hierarchical file format intended to be a non-opinionated container.
 **Goals**:
 
 * Keep it simple and not much more complicated than something like IFF/RIFF formats.  Building tables is unfortunately a little involved, but reading seems to be pretty simple.
-* Don't care what is put into the 'chunks' within the file.  With only two exceptions, there are no predefined identifiers or requirements.
+* Don't care what is put into the 'chunks' within the file.
 * Move discoverability to the front of the format so scanning the content to find things is not needed.  Specifically, the primary goal is a container for randomly accessing the content instead of being read in all at once.  (The specific intention was an archive format somewhat like ZIP/7z etc but with different goals.)
 * All lengths and sizes are u64 so there are no 4GB limitations.
 * Support little and big endian within the structure.
@@ -25,18 +25,18 @@ The header contains basic information about the content of the HFF file.  The it
 
 ### Tables
 This is an array of table entries, the count found in the header indicates the length.  Each entry is 48 bytes (3 x 16) to maintain alignment and contains:
-* Primary and secondary identification.  In 'most' cases, for a simple data file, the secondary is not used and should be set to Ecc::INVALID (i.e. all zero's).  (For the authors purposes, this is likely enforced but it is not a part of the generic container.)
+* Primary and secondary identification.  In 'most' cases, for a simple data file, the secondary is not used and should be set to Ecc::INVALID (i.e. all zero's).
 * Optional metadata length and offset.  All offsets are absolute from the start of the file.
 * A count of child tables under this table and an offset (index'd) where the next sibling table exists (or zero if no siblings).
 * A count and index to the chunk data attached to the table.  (2 billion chunk limit in the overall file.)
 
 ### Chunks
 A second array immediately following the table array, the count found in the header indicates the length.  Each entry is 32 bytes (2 x 16) to maintain alignment and contains:
-* Primary and secondary identification.  The secondary ID is generally used to indicate special attributes of the contained chunk data such as a compression algorithm which was used to store the data.  Once again, this is not enforced in anyway, it is just the purpose for the author's use case.
+* Primary and secondary identification.  The secondary ID is generally used to indicate special attributes of the contained chunk data such as a compression algorithm which was used to store the data.  This is not enforced in anyway, it is just an suggested use case.
 * The length and offset within the file of the chunk data.  All chunk data is padded to 16 bytes, the length only specifies the real length before padding.  All offsets are absolute from the start of the file.
 
 ### Data
-Both the metadata and chunk data is stored after the above chunk array.  The only limitation is 64 bit size and offset and also the offset must be a multiple of 16.
+Both the metadata and chunk data is stored after the above chunk array.  The only limitation is 64 bit size and offset and also the offset must be a multiple of 16.  (NOTE: If > petabyte is ever needed, we can extend this by 3 more bits since the low 3 are alwas zero given the alignment.)
 
 ## Identifiers
 The identification of tables and chunks is an eight character code.  This is a little missleading in terms that FCC (four character codes in IFF/RIFF) were a specific byte sequence, HFF uses the u64 value represented by the string when decoded into a [u8; 8] array.  There was no specific reason for this change but it does mean the ID's do not have to be valid utf8, they can be simple numbers if desired.  The only reserved ID is the zero value, everything else is up to use case.  NOTE: The implication of serializing the u64 is that it is endian swapped on little endian machines, so there is a little additional overhead if the structure is in the opposing endian to the local CPU.

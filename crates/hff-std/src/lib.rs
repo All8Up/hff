@@ -21,7 +21,10 @@ mod writer;
 pub use writer::write_stream;
 
 mod reader;
-pub use reader::{read_stream, read_stream_full};
+pub use reader::{
+    read_stream, read_stream_full, ChunkCache, ChunkIter, ChunkView, Hff, ReadSeek, TableIter,
+    TableView,
+};
 
 /// Create a table structure to be contained in the HFF.
 /// Panics if the given Ecc data is invalid.
@@ -94,7 +97,7 @@ mod tests {
     fn checks(hff: &Hff, cache: &mut ChunkCache) {
         {
             // Check the content of root is as expected.
-            let root = hff.iter().next().unwrap();
+            let root = hff.tables().next().unwrap();
             assert_eq!(root.primary(), "Test".into());
             assert_eq!(root.secondary(), "TestSub".into());
             assert_eq!(root.child_count(), 2);
@@ -111,14 +114,14 @@ mod tests {
 
         {
             // Check the metadata for the root.
-            let root = hff.iter().next().unwrap();
+            let root = hff.tables().next().unwrap();
             let metadata = root.metadata(cache).unwrap();
             assert!(std::str::from_utf8(&metadata)
                 .unwrap()
                 .starts_with("This is some metadata"));
 
             // Check the last table (second root child) metadata.
-            let mut children = hff.iter().next().unwrap().iter();
+            let mut children = hff.tables().next().unwrap().iter();
             children.next();
             let c4 = children.next().unwrap();
             let metadata = c4.metadata(cache).unwrap();
@@ -129,7 +132,7 @@ mod tests {
 
         {
             // Check the root chunks are as expected.
-            let root = hff.iter().next().unwrap();
+            let root = hff.tables().next().unwrap();
 
             let test_data = [
                 ("TRC0", "TRS0", "Chunks can be most types."),

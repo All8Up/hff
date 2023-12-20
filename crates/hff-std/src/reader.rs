@@ -5,13 +5,18 @@ use std::{
     mem::size_of,
 };
 
-/// Trait for types that can be used as a source of chunks.
+/// A wrapper trait with a blanket implementation for any type which
+/// supports both Read and Seek.  The data source of the Hff must
+/// support this in order to retrieve metadata or chunk's from the
+/// stream.  If the stream is not Seek, either use the provided
+/// `_full` variation which will return the ChunkCache or otherwise
+/// store the entire file somewhere which can be accessed with Seek.
 pub trait ReadSeek: Read + Seek {}
 
 // Implement over anything which can read and seek.
 impl<T: Read + Seek> ReadSeek for T {}
 
-/// Act as a read/seek IO object for purposes of having
+/// Act as a ReadSeek IO object for purposes of having
 /// an entire HFF in memory at one time.
 #[derive(Debug, Clone)]
 pub struct ChunkCache {
@@ -48,10 +53,13 @@ impl Seek for ChunkCache {
     }
 }
 
-///
+/// The Hff structure data.  This is an immutable representation of the
+/// content of an Hff stream.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Hff {
+    /// The tables found in the header structure.
     tables: Vec<Table>,
+    /// The chunks found within the header structure.
     chunks: Vec<Chunk>,
 }
 
@@ -71,13 +79,13 @@ impl Hff {
             + (size_of::<Chunk>() * self.chunks.len())
     }
 
-    /// Get an iterator over the root level of the content.
-    pub fn iter(&self) -> TableIter {
+    /// Get an iterator over the child tables.
+    pub fn tables(&self) -> TableIter {
         TableIter::new(self, 0)
     }
 }
 
-///
+/// View of a table.
 pub struct TableView<'a> {
     hff: &'a Hff,
     index: usize,
@@ -150,6 +158,7 @@ impl<'a> TableView<'a> {
     }
 }
 
+/// A view to a chunk.
 pub struct ChunkView<'a> {
     hff: &'a Hff,
     index: usize,
@@ -190,7 +199,7 @@ impl<'a> ChunkView<'a> {
     }
 }
 
-///
+/// Iterator over a table's chunks.
 pub struct ChunkIter<'a> {
     hff: &'a Hff,
     current: isize,
@@ -222,7 +231,7 @@ impl<'a> Iterator for ChunkIter<'a> {
     }
 }
 
-///
+/// An iterator over tables at a given level.
 pub struct TableIter<'a> {
     hff: &'a Hff,
     start: Option<usize>,
