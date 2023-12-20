@@ -8,7 +8,7 @@ A hierarchical file format intended to be a non-opinionated container.
 * Don't care what is put into the 'chunks' within the file.
 * Move discoverability to the front of the format so scanning the content to find things is not needed.  Specifically, the primary goal is a container for randomly accessing the content instead of being read in all at once.  (The specific intention was an archive format somewhat like ZIP/7z etc but with different goals.)
 * All lengths and sizes are u64 so there are no 4GB limitations.
-* Support little and big endian within the structure.
+* Support little and big endian within the structure.  One caveat here is that chunks are not aware of the endian of the container and as such it is possible to write little endian Hff 'structure' but have big endian chunk content.  Dealing with such things is up to the user, though data is exposed to deal with this.
 * Update alignment within the file for current generation CPU's.  Specifically this means that everything in the format will be 16 byte aligned such that direct mapping within something like an mmap reader will not have to use unaligned (slower) instructions for contained SIMD data.
 * Increase the identifier space.  Specifically IFF/RIFF use 4 character codes, I doubled that for more readability.  Later, when the 16 byte alignment of the internals was finalized, I had another 8 bytes free, so each chunk and table ended up with a primary and secondary ID.  The purpose and utility of this is up to the user but there are a few benefits which will be covered later.
 * Metadata supported as a specific feature.  Metadata is in nearly every container at this point and rather than leaving it as an after-thought and up to the user, it is built into each 'table' within the format.

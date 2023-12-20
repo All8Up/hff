@@ -29,15 +29,19 @@ pub use depth_first_iter::DepthFirstIter;
 pub fn read_stream(reader: &mut dyn Read) -> Result<Hff> {
     // The header determines the structure endianess.
     let header = Header::read(reader)?;
-    if header.is_native_endian() {
-        let tables = read_tables::<NE>(reader, header.table_count())?;
-        let chunks = read_chunks::<NE>(reader, header.chunk_count())?;
-        Ok(Hff::new(tables, chunks))
+    let (tables, chunks) = if header.is_native_endian() {
+        (
+            read_tables::<NE>(reader, header.table_count())?,
+            read_chunks::<NE>(reader, header.chunk_count())?,
+        )
     } else {
-        let tables = read_tables::<OP>(reader, header.table_count())?;
-        let chunks = read_chunks::<OP>(reader, header.chunk_count())?;
-        Ok(Hff::new(tables, chunks))
-    }
+        (
+            read_tables::<OP>(reader, header.table_count())?,
+            read_chunks::<OP>(reader, header.chunk_count())?,
+        )
+    };
+
+    Ok(Hff::new(header, tables, chunks))
 }
 
 /// Read a HFF from the given stream along with all the data for the chunks.

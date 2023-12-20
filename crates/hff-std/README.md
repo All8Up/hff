@@ -1,4 +1,6 @@
 # hff-std
+See: https://crates.io/crates/hff for the primary documentation and examples.
+
 Synchronous implementation of reader, visitor, writer utilities for HFF.
 
 Also supplies various shared elements such as the table/chunk builders for async variations.

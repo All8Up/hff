@@ -53,8 +53,8 @@ impl Header {
     }
 
     /// Get the container version.
-    pub fn version(&self) -> &Semver {
-        &self.version
+    pub fn version(&self) -> Semver {
+        self.version
     }
 
     /// What's the endian?
@@ -166,7 +166,7 @@ mod tests {
             let mut buffer = vec![];
             assert!(header.write::<OP>(&mut buffer).is_ok());
             let dup = Header::read(&mut buffer.as_slice()).unwrap();
-            assert_eq!(dup.magic, Ecc::HFF_MAGIC);
+            assert_eq!(dup.magic, Ecc::HFF_MAGIC.swap_bytes());
             assert_eq!(dup.version, Semver::new(0, 1, 0));
             assert_eq!(dup.content, Ecc::new("Test"));
             assert_eq!(dup.table_count, 1);

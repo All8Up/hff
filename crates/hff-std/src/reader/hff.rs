@@ -1,11 +1,15 @@
 use crate::{DepthFirstIter, TableIter};
-use hff_core::{Chunk, Header, Table};
+use hff_core::{Chunk, Header, Semver, Table};
 use std::{fmt::Debug, mem::size_of};
 
 /// The Hff structure data.  This is an immutable representation of the
 /// content of an Hff stream.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Hff {
+    /// Was the structure in native endian?
+    native: bool,
+    /// The version of the file format.
+    version: Semver,
     /// The tables found in the header structure.
     tables: Vec<Table>,
     /// The chunks found within the header structure.
@@ -14,11 +18,27 @@ pub struct Hff {
 
 impl Hff {
     /// Create a new Hff wrapper.
-    pub fn new(tables: impl Into<Vec<Table>>, chunks: impl Into<Vec<Chunk>>) -> Self {
+    pub fn new(
+        header: Header,
+        tables: impl Into<Vec<Table>>,
+        chunks: impl Into<Vec<Chunk>>,
+    ) -> Self {
         Self {
+            native: header.is_native_endian(),
+            version: header.version(),
             tables: tables.into(),
             chunks: chunks.into(),
         }
+    }
+
+    /// Return if the structure of the source was in native endian.
+    pub fn is_native_endian(&self) -> bool {
+        self.native
+    }
+
+    /// Return the version of the file structure the file was read from.
+    pub fn version(&self) -> Semver {
+        self.version
     }
 
     /// Get the offset from the start of the file to the start of the chunk data.
