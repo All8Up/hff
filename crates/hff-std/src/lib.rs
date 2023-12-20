@@ -21,7 +21,7 @@ mod writer;
 pub use writer::write_stream;
 
 mod reader;
-pub use reader::read_stream;
+pub use reader::{read_stream, read_stream_full};
 
 /// Create a table structure to be contained in the HFF.
 /// Panics if the given Ecc data is invalid.
@@ -31,6 +31,8 @@ pub fn table(primary: impl Into<Ecc>, secondary: impl Into<Ecc>) -> TableBuilder
 
 #[cfg(test)]
 mod tests {
+    use crate::reader::{ChunkCache, Hff};
+
     use super::*;
 
     fn test_table() -> Result<TableDesc> {
@@ -84,25 +86,15 @@ mod tests {
                     )
                     .end(),
             )
-            .table(table("C4Prime", "C4Sub").chunk("C4C0", "C4S0","The last chunk in the overall file.")?.metadata("And we're done.")?.end())
+            .table(table("C4Prime", "C4Sub").chunk("C4C0", "C4S0","The last chunk in the overall file.")?
+                .metadata("And we're done.")?.end())
             .end())
     }
 
-    #[test]
-    fn test() {
-        // Simple dev test for structure.
+    fn checks(hff: &Hff, cache: &mut ChunkCache) {
         {
-            let table = test_table().unwrap();
-            let mut buffer = vec![];
-
-            assert!(write_stream::<hff_core::NE>("Test", table, &mut buffer).is_ok());
-
-            // Read it back in and iterate.
-            let hff = read_stream(&mut buffer.as_slice()).unwrap();
-            let root = hff.iter().next().unwrap();
-            println!("Root: {:?}", root);
-
             // Check the content of root is as expected.
+            let root = hff.iter().next().unwrap();
             assert_eq!(root.primary(), "Test".into());
             assert_eq!(root.secondary(), "TestSub".into());
             assert_eq!(root.child_count(), 2);
@@ -117,12 +109,93 @@ mod tests {
             assert_eq!(root_children.next(), None);
         }
 
-        // {
-        //     let table = test_table();
-        //     let mut buffer = vec![];
+        {
+            // Check the metadata for the root.
+            let root = hff.iter().next().unwrap();
+            let metadata = root.metadata(cache).unwrap();
+            assert!(std::str::from_utf8(&metadata)
+                .unwrap()
+                .starts_with("This is some metadata"));
 
-        //     assert!(write_stream::<hff_core::OP>("Test", table, &mut buffer).is_ok());
-        //     assert!(read_stream(&mut buffer.as_slice()).is_ok());
-        // }
+            // Check the last table (second root child) metadata.
+            let mut children = hff.iter().next().unwrap().iter();
+            children.next();
+            let c4 = children.next().unwrap();
+            let metadata = c4.metadata(cache).unwrap();
+            assert!(std::str::from_utf8(&metadata)
+                .unwrap()
+                .starts_with("And we're done."));
+        }
+
+        {
+            // Check the root chunks are as expected.
+            let root = hff.iter().next().unwrap();
+
+            let test_data = [
+                ("TRC0", "TRS0", "Chunks can be most types."),
+                (
+                    "TRC1",
+                    "TRS1",
+                    "Both chunks and tables will maintain their order within the file.",
+                ),
+                (
+                    "TRC2",
+                    "TRS2",
+                    "But, there is no relationship maintained between chunks and tables.",
+                ),
+                (
+                    "TRC3",
+                    "TRS3",
+                    "In other words, we are creating two lists, one for chunks and one for tables.",
+                ),
+                (
+                    "TRC4",
+                    "TRS4",
+                    "So, the order of adding chunks inbetween tables has no impact on the result.",
+                ),
+                (
+                    "TRC5",
+                    "TRS5",
+                    "Only which table the chunk is associated with will matter..",
+                ),
+            ];
+            for (index, chunk) in root.chunks().enumerate() {
+                let test_entry = test_data[index];
+                assert_eq!(Ecc::new(test_entry.0), chunk.primary());
+                assert_eq!(Ecc::new(test_entry.1), chunk.secondary());
+                assert_eq!(chunk.size(), test_entry.2.len());
+                assert_eq!(
+                    chunk.data(cache).unwrap(),
+                    Vec::from(test_entry.2.as_bytes())
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test() {
+        // Simple dev test for structure.
+        {
+            let table = test_table().unwrap();
+            let mut buffer = vec![];
+
+            assert!(write_stream::<hff_core::NE>("Test", table, &mut buffer).is_ok());
+
+            // Read it back in and iterate.
+            let (hff, mut cache) = read_stream_full(&mut buffer.as_slice()).unwrap();
+            checks(&hff, &mut cache);
+        }
+
+        // Simple dev test for structure.
+        {
+            let table = test_table().unwrap();
+            let mut buffer = vec![];
+
+            assert!(write_stream::<hff_core::OP>("Test", table, &mut buffer).is_ok());
+
+            // Read it back in and iterate.
+            let (hff, mut cache) = read_stream_full(&mut buffer.as_slice()).unwrap();
+            checks(&hff, &mut cache);
+        }
     }
 }

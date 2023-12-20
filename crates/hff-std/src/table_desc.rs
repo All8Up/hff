@@ -1,6 +1,6 @@
 use crate::{ChunkDesc, DataBuilder, DataSource};
-use hff_core::{Chunk, Ecc, Error, Result, Table};
-use std::fmt::Debug;
+use hff_core::{Chunk, Ecc, Error, Header, Result, Table};
+use std::{fmt::Debug, mem::size_of};
 
 /// Helper structure to build a flattened table tree.
 pub struct Flattened {
@@ -59,7 +59,7 @@ impl Flattened {
     }
 
     /// Finish the structure.
-    pub fn finish(mut self) -> (Vec<Table>, DataBuilder, Vec<Chunk>) {
+    pub fn finish(mut self) -> (Vec<Table>, Vec<Chunk>, DataBuilder) {
         // Adjust root to take into account for itself in regards to siblings.
         *self.root.sibling_mut() += 1;
 
@@ -67,8 +67,22 @@ impl Flattened {
         let mut tables = vec![self.root];
         tables.extend(self.children);
 
+        // Get the size of the header data before the chunk data.
+        let offset = size_of::<Header>()
+            + size_of::<Table>() * tables.len()
+            + size_of::<Chunk>() * self.chunks.len();
+
+        // Adjust all offsets in tables and chunks to account for the
+        // header.
+        for table in &mut tables {
+            *table.metadata_offset_mut() += offset as u64;
+        }
+        for chunk in &mut self.chunks {
+            *chunk.offset_mut() += offset as u64;
+        }
+
         // Return it all.
-        (tables, self.data_builder, self.chunks)
+        (tables, self.chunks, self.data_builder)
     }
 }
 

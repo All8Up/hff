@@ -87,6 +87,11 @@ impl Table {
         self.metadata_offset
     }
 
+    /// Get the metadata offset mutably.
+    pub fn metadata_offset_mut(&mut self) -> &mut u64 {
+        &mut self.metadata_offset
+    }
+
     /// Helper to collapse tables into parents.
     pub fn offset(&mut self, data_length: u64, chunk_count: u32) {
         if self.metadata_length > 0 {

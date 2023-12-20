@@ -25,7 +25,7 @@ pub fn write_stream<E: ByteOrder>(
     // Write the header.
     header.write::<E>(writer)?;
     // Write the tables.
-    let (tables, data, chunks) = content.flatten_tables()?.finish();
+    let (tables, chunks, data) = content.flatten_tables()?.finish();
 
     write_tables::<E>(tables, writer)?;
     write_chunks::<E>(chunks, writer)?;
