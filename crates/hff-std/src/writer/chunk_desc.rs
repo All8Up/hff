@@ -1,4 +1,4 @@
-use super::DataSource;
+use crate::DataSource;
 use hff_core::Ecc;
 
 /// Internal description of a chunk and the data source for the contents.

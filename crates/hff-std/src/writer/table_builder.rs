@@ -8,7 +8,7 @@ pub struct TableBuilder(TableDesc);
 
 impl TableBuilder {
     /// Create a new instance.
-    pub(super) fn new(primary: Ecc, secondary: Ecc) -> Self {
+    pub(crate) fn new(primary: Ecc, secondary: Ecc) -> Self {
         Self(TableDesc::new(primary, secondary))
     }
 

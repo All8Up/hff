@@ -1,9 +1,10 @@
-use crate::{ChunkDesc, DataBuilder, DataSource};
+use super::{ChunkDesc, DataBuilder};
+use crate::DataSource;
 use hff_core::{Chunk, Ecc, Error, Header, Result, Table};
 use std::{fmt::Debug, mem::size_of};
 
 /// Helper structure to build a flattened table tree.
-pub struct Flattened {
+pub(crate) struct Flattened {
     /// The root tree at this level.
     pub root: Table,
     /// The children of this tree.
@@ -235,87 +236,5 @@ impl TableDesc {
             chunks,
             data_builder,
         ))
-
-        // // Split the children and their related children.
-        // let mut parents = vec![];
-        // let mut child_groups = vec![];
-
-        // // Create a builder for the children to store chunks into.
-        // for child in self.children {
-        //     // Flatten the children.
-        //     let mut child_data = child.flatten_tables()?;
-
-        //     // Push the child table itself.
-        //     parents.push(child_data.root);
-        //     // Push the children of the child table.
-        //     child_groups.push(child_data.children);
-        //     // Append child chunk data.
-        //     child_builder.append(child_data.data_builder);
-        // }
-        // // Update the parent siblings.
-        // let count = parents.len();
-        // let mut child_count = 0;
-        // for (index, parent) in parents.iter_mut().enumerate() {
-        //     let has_siblings = index < count - 1;
-        //     child_count += child_groups[index].len();
-        //     if has_siblings {
-        //         // + 1 for the parent itself and 1 for each child.
-        //         *parent.sibling_mut() = (1 + child_count) as u32;
-        //     }
-        // }
-
-        // // Flatten the parents with children following.
-        // let mut children = Vec::<Table>::new();
-        // for (child, mut nested) in parents.into_iter().zip(child_groups) {
-        //     children.push(child);
-        //     children.append(&mut nested);
-        // }
-
-        // // Store this tables metadata.
-        // if let Some(mut metadata) = self.metadata {
-        //     if let Some(length) = metadata.len() {
-        //         data_builder.push(metadata, length);
-        //     } else {
-        //         let length = metadata.prepare()?;
-        //         data_builder.push(metadata, length);
-        //     }
-        // }
-
-        // // Store this tables chunks.
-        // for chunk in self.chunks {
-        //     // TODO: Store primary and secondary somewhere.
-        //     let mut data = chunk.data();
-        //     if let Some(length) = data.len() {
-        //         data_builder.push(data, length);
-        //     } else {
-        //         let length = data.prepare()?;
-        //         data_builder.push(data, length);
-        //     }
-        // }
-
-        // // Offset all the metadata and chunk indexing based on the current data builder.
-
-        // // Create the representation of this table.
-        // let mut parent = Table::create()
-        //     // Content identification.
-        //     .primary(self.primary)
-        //     .secondary(self.secondary)
-        //     // Our metadata.
-        //     .metadata_length(0)
-        //     .metadata_offset(0)
-        //     // Our count of children.
-        //     .child_count(child_count as u32)
-        //     // We have no siblings at this time.
-        //     .sibling(0)
-        //     // Our count of chunks.
-        //     .chunk_count(chunk_count as u32)
-        //     // The first chunk is always 0 for the outer table.
-        //     .chunk_index(0)
-        //     .end();
-
-        // // Append the child data builder.
-        // data_builder.append(child_builder);
-
-        // Ok(Flattened::with(parent, children, data_builder))
     }
 }

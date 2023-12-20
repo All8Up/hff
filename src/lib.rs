@@ -1,15 +1,22 @@
 //! The high level wrapper around the supporting HFF crates.
 //!
-//! # Examples (See[^note])
+//! # Examples
 //!
 //! ```
 //! use hff::*;
 //!
 //! // Creating the content can use the table builder:
 //! let content = table("Prime", "Second")
+//!     // Metadata and chunks can be pulled from many types of source data.
 //!     .metadata("Each table can have metadata.").unwrap()
 //!     .chunk("AChunk", Ecc::INVALID, "Each table can have 0..n chunks of data.").unwrap()
-//!     .table(table("Child1", Ecc::INVALID).end())
+//!     .table(table("Child1", Ecc::INVALID)
+//!         .metadata("Unique to this table.").unwrap()
+//!         // Chunks can source from many things, in this case it is a PathBuf
+//!         // for this file which will be embedded.
+//!         .chunk("ThisFile", "Copy", std::path::PathBuf::from(file!())).unwrap()
+//!         .end()
+//!     )
 //!     .table(table("Child2", Ecc::INVALID).end())
 //!     .end();
 //!
@@ -19,39 +26,47 @@
 //! write_stream::<NE>("HffFile", content, &mut buffer).unwrap();
 //!
 //! // Hff can be read back from anything which supports the std::io::Read
-//! // trait.  
+//! // trait.  In this case we also read all the data into a cache in memory.
+//! // The cache is simply an array with Read+Seek implemented on top of a
+//! // Vec<u8>.
 //! let (hff, mut cache) = read_stream_full(&mut buffer.as_slice()).unwrap();
 //!
-//! // Note that hff is const and represents just the structure of the file, it does
-//! // not contain any of the data, not even the metadata attached to tables.
-//! // In order to fetch the content, you can use the iterators:
-//! for table in hff.tables() {
-//!     // Will only iterate over the outer table(s).  (In this case the
-//!     // "Prime"|"Second" table.)
-//!     
-//!     // Iterate the chunks in this table.
+//! // The Hff instance contains the structure of the content and can be
+//! // iterated in multiple ways.  Here, we'll use the depth first iterator
+//! // just to see all the content.
+//! for (depth, table) in hff.depth_first() {
+//!     // Print information about the table.
+//!     println!("{}: {:?} ({})",
+//!         depth,
+//!         table.primary(),
+//!         std::str::from_utf8(&table.metadata(&mut cache).unwrap_or(vec![])).unwrap()
+//!     );
+//!
+//!     // Iterate the chunks.
 //!     for chunk in table.chunks() {
-//!         // Read the chunk data.
-//!         let _data = chunk.data(&mut cache).unwrap();
+//!         println!("{}", std::str::from_utf8(&chunk.data(&mut cache).unwrap()).unwrap());
 //!     }
 //! }
 //! ```
 //!
 //! # In Progress
 //! - [x] Depth first iterator through tables.
-//! - [ ] More metadata/chunk data source types.  Currently only the &str data type
-//! is implemented for initial testing purposes.
+//! - [x] More metadata/chunk data source types.  Most things which can be turned into
+//! Vec<u8> exist now, read trait for anything which can be immediately pulled in at
+//! runtime and finally std::path::{Path, PathBuf} to pull data from a file.
+//! - [ ] Yet more metadata/chunk data source types.  Specifically serde and compressed.
+//! - [ ] Utility types for metadata.  For instance a simple key=value string map and a
+//! simple array of strings.
 //! - [ ] Change the table builder to allow multiple tables at the 'root' level.
 //! Currently the builder expects a single outer table to contain all others.  This
 //! is a holdover from a prior format structure which was removed.
+//! - [ ] After fixing the table builder, implement the lazy header variation so compressed
+//! chunks do not have to be stored in memory prior to writing.
 //! - [ ] Async-std implementation of the reader.
 //! - [ ] Async-std implementation of the writer.
 //! - [ ] Tokio implementation of the reader.
 //! - [ ] Tokio implementation of the writer.
 //! - [ ] Mmap, io_ring and whatever other variations make sense in the long run.
-//!
-//! [^note]: Currently chunks can only contain strings, this will be expanded as soon
-//! as the major structure is stable.
 #![warn(missing_docs)]
 
 // Core types.

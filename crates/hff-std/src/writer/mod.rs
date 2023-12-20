@@ -1,5 +1,16 @@
-use crate::{DataBuilder, TableDesc};
 use hff_core::{ByteOrder, Chunk, Ecc, Header, Result, Table};
+
+mod data_builder;
+pub use data_builder::DataBuilder;
+
+mod table_desc;
+pub use table_desc::TableDesc;
+
+mod table_builder;
+pub use table_builder::TableBuilder;
+
+mod chunk_desc;
+use chunk_desc::ChunkDesc;
 
 /// Write the table structure to an HFF container.
 /// NOTE: This does not support seek streams and as

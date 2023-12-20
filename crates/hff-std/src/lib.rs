@@ -5,20 +5,8 @@ use hff_core::{Ecc, Error, Result};
 mod data_source;
 pub use data_source::{DataSource, StdWriter};
 
-mod chunk_desc;
-use chunk_desc::ChunkDesc;
-
-mod table_desc;
-pub use table_desc::TableDesc;
-
-mod table_builder;
-pub use table_builder::TableBuilder;
-
-mod data_builder;
-pub use data_builder::DataBuilder;
-
 mod writer;
-pub use writer::write_stream;
+pub use writer::{write_stream, TableBuilder, TableDesc};
 
 mod reader;
 pub use reader::{
@@ -34,9 +22,8 @@ pub fn table(primary: impl Into<Ecc>, secondary: impl Into<Ecc>) -> TableBuilder
 
 #[cfg(test)]
 mod tests {
-    use crate::reader::{ChunkCache, Hff};
-
     use super::*;
+    use crate::reader::{ChunkCache, Hff};
 
     fn test_table() -> Result<TableDesc> {
         Ok(table("Test", "TestSub")
