@@ -1,6 +1,6 @@
 [package]
 name = "hff-async-std"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["All8Up <all8up@gmail.com>"]
 license-file = "LICENSE"
@@ -9,5 +9,5 @@ repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 
 [dependencies]
-hff-core = { path = "./../hff-core", version = "0.1.0" }
-hff-std = { path = "./../hff-std", version = "0.1.0" }
+hff-core = { path = "./../hff-core", version = "0.2.0" }
+hff-std = { path = "./../hff-std", version = "0.2.0" }
