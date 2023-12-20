@@ -38,7 +38,7 @@
 //! ```
 //!
 //! # In Progress
-//! - [ ] Depth first iterator through tables.
+//! - [x] Depth first iterator through tables.
 //! - [ ] More metadata/chunk data source types.  Currently only the &str data type
 //! is implemented for initial testing purposes.
 //! - [ ] Change the table builder to allow multiple tables at the 'root' level.

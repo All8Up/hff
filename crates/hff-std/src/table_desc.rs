@@ -31,17 +31,6 @@ impl Debug for Flattened {
 }
 
 impl Flattened {
-    /// Create a new flattened structure representing the
-    /// output to the file.
-    pub fn new(root: Table) -> Self {
-        Self {
-            root,
-            children: vec![],
-            data_builder: DataBuilder::new(),
-            chunks: vec![],
-        }
-    }
-
     /// Create a new flattened structure with the given
     /// information.
     pub fn with(
@@ -124,7 +113,7 @@ impl TableDesc {
     }
 
     /// Push a child table.
-    pub fn push_table(&mut self, child: TableDesc) {
+    pub(crate) fn push_table(&mut self, child: TableDesc) {
         self.children.push(child);
     }
 
@@ -138,7 +127,7 @@ impl TableDesc {
     }
 
     /// Push a chunk onto the table.
-    pub fn push_chunk(&mut self, chunk: ChunkDesc) {
+    pub(crate) fn push_chunk(&mut self, chunk: ChunkDesc) {
         self.chunks.push(chunk);
     }
 
@@ -155,7 +144,7 @@ impl TableDesc {
     }
 
     /// Flatten the table hierarchy.
-    pub fn flatten_tables(self) -> Result<Flattened> {
+    pub(crate) fn flatten_tables(self) -> Result<Flattened> {
         // Create a new flattened structure to contain this table and
         // its children.
         let mut data_builder = DataBuilder::new();

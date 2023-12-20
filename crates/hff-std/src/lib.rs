@@ -6,7 +6,7 @@ mod data_source;
 pub use data_source::{DataSource, StdWriter};
 
 mod chunk_desc;
-pub use chunk_desc::ChunkDesc;
+use chunk_desc::ChunkDesc;
 
 mod table_desc;
 pub use table_desc::TableDesc;
@@ -22,8 +22,8 @@ pub use writer::write_stream;
 
 mod reader;
 pub use reader::{
-    read_stream, read_stream_full, ChunkCache, ChunkIter, ChunkView, Hff, ReadSeek, TableIter,
-    TableView,
+    read_stream, read_stream_full, ChunkCache, ChunkIter, ChunkView, DepthFirstIter, Hff, ReadSeek,
+    TableIter, TableView,
 };
 
 /// Create a table structure to be contained in the HFF.
@@ -106,9 +106,9 @@ mod tests {
             // Check that we get a proper child iterator from the root.
             let mut root_children = root.iter();
             let c0 = root_children.next().unwrap();
-            println!("c0: {:?}", c0);
+            assert_eq!(c0.primary(), "C0Prime".into());
             let c4 = root_children.next().unwrap();
-            println!("c4: {:?}", c4);
+            assert_eq!(c4.primary(), "C4Prime".into());
             assert_eq!(root_children.next(), None);
         }
 
@@ -171,6 +171,23 @@ mod tests {
                     chunk.data(cache).unwrap(),
                     Vec::from(test_entry.2.as_bytes())
                 );
+            }
+
+            {
+                let test_data = [
+                    (0, "Test", "TestSub"),
+                    (1, "C0Prime", "C0Sub"),
+                    (2, "C1Prime", "C1Sub"),
+                    (2, "C2Prime", "C2Sub"),
+                    (3, "C3Prime", "C3Sub"),
+                    (1, "C4Prime", "C4Sub"),
+                ];
+                // Test depth first iteration.
+                for ((depth, table), data) in hff.depth_first().zip(test_data.iter()) {
+                    assert_eq!(depth, data.0);
+                    assert_eq!(table.primary(), data.1.into());
+                    assert_eq!(table.secondary(), data.2.into());
+                }
             }
         }
     }
