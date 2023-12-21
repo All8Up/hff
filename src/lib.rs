@@ -5,25 +5,33 @@
 //! ```
 //! use hff::*;
 //!
-//! // Creating the content can use the table builder:
-//! let content = table("Prime", "Second")
+//! // Creating the content can use the builder:
+//! let content = hff([
+//!     table("Prime", "Second")
 //!     // Metadata and chunks can be pulled from many types of source data.
 //!     .metadata("Each table can have metadata.").unwrap()
-//!     .chunk("AChunk", Ecc::INVALID, "Each table can have 0..n chunks of data.").unwrap()
-//!     .table(table("Child1", Ecc::INVALID)
+//!     // Tables can have chunks.
+//!     .chunks([
+//!         chunk("AChunk", Ecc::INVALID, "Each table can have 0..n chunks of data.").unwrap()
+//!     ])
+//!     // Tables can have child tables.
+//!     .children([
+//!         table("Child1", Ecc::INVALID)
 //!         .metadata("Unique to this table.").unwrap()
 //!         // Chunks can source from many things, in this case it is a PathBuf
 //!         // for this file which will be embedded.
-//!         .chunk("ThisFile", "Copy", std::path::PathBuf::from(file!())).unwrap()
-//!         .end()
-//!     )
-//!     .table(table("Child2", Ecc::INVALID).end())
-//!     .end();
+//!         .chunks([
+//!             chunk("ThisFile", "Copy", std::path::PathBuf::from(file!())).unwrap()
+//!         ])
+//!     ]),
+//!     // And there can be multiple tables at the root.
+//!     table("Child2", Ecc::INVALID)
+//! ]);
 //!
-//! // The results can be packaged into an output stream (std::io::Write)
+//! // The results can be packaged into an output stream.
 //! // This can be anything which supports the std::io::Write trait.
 //! let mut buffer = vec![];
-//! write_stream::<NE>("HffFile", content, &mut buffer).unwrap();
+//! content.write::<NE>("Test", &mut buffer).unwrap();
 //!
 //! // Hff can be read back from anything which supports the std::io::Read
 //! // trait.  In this case we also read all the data into a cache in memory.
@@ -57,10 +65,10 @@
 //! - [ ] Yet more metadata/chunk data source types.  Specifically serde and compressed.
 //! - [ ] Utility types for metadata.  For instance a simple key=value string map and a
 //! simple array of strings.
-//! - [ ] Change the table builder to allow multiple tables at the 'root' level.
+//! - [x] Change the table builder to allow multiple tables at the 'root' level.
 //! Currently the builder expects a single outer table to contain all others.  This
 //! is a holdover from a prior format structure which was removed.
-//! - [ ] After fixing the table builder, implement the lazy header variation so compressed
+//! - [-] After fixing the table builder, implement the lazy header variation so compressed
 //! chunks do not have to be stored in memory prior to writing.
 //! - [ ] Async-std implementation of the reader.
 //! - [ ] Async-std implementation of the writer.

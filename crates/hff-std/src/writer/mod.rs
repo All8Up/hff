@@ -1,65 +1,115 @@
-use hff_core::{ByteOrder, Chunk, Ecc, Header, Result, Table};
+use crate::{DataSource, Error, Result};
+use hff_core::{Chunk, Ecc, Table};
 
-mod data_builder;
-pub use data_builder::DataBuilder;
+mod table_array;
+pub(crate) use table_array::TableArray;
 
-mod table_desc;
-pub use table_desc::TableDesc;
+mod chunk_array;
+pub(crate) use chunk_array::ChunkArray;
 
-mod table_builder;
-pub use table_builder::TableBuilder;
+mod data_array;
+pub(crate) use data_array::DataArray;
 
 mod chunk_desc;
-use chunk_desc::ChunkDesc;
+pub(crate) use chunk_desc::ChunkDesc;
 
-/// Write the table structure to an HFF container.
-/// NOTE: This does not support seek streams and as
-/// such any compressed chunks will need to be buffered
-/// in memory until written.  Seek will allow deferral
-/// of the compression and reduce memory requirements.
-/// Support for seek and lazy header updates will be
-/// added later.
-/// NOTE: Currently this expects a single root table to
-/// encapsulate everything in the file.  This is not a
-/// rule in the file format, it is simply how this is
-/// written.
-pub fn write_stream<E: ByteOrder>(
-    content_type: impl Into<Ecc>,
-    content: TableDesc,
-    writer: &mut dyn std::io::Write,
-) -> Result<()> {
-    // Compute the header information.
-    let table_count = content.table_count();
-    let chunk_count = content.chunk_count();
-    let header = Header::new(content_type.into(), table_count as u32, chunk_count as u32);
+mod table_desc;
+pub(crate) use table_desc::TableDesc;
 
-    // Write the header.
-    header.write::<E>(writer)?;
-    // Write the tables.
-    let (tables, chunks, data) = content.flatten_tables()?.finish();
+mod table_builder;
+pub(crate) use table_builder::TableBuilder;
 
-    write_tables::<E>(tables, writer)?;
-    write_chunks::<E>(chunks, writer)?;
-    write_data(data, writer)?;
+mod hff_content;
+pub use hff_content::HffContent;
 
-    writer.flush()?;
-    Ok(())
+/// Start building a new table.
+pub fn table(primary: impl Into<Ecc>, secondary: impl Into<Ecc>) -> TableBuilder {
+    TableBuilder::new(primary.into(), secondary.into())
 }
 
-fn write_tables<E: ByteOrder>(tables: Vec<Table>, writer: &mut dyn std::io::Write) -> Result<()> {
-    for table in tables {
-        table.write::<E>(writer)?;
+/// Build a new chunk.
+pub fn chunk<T>(primary: impl Into<Ecc>, secondary: impl Into<Ecc>, content: T) -> Result<ChunkDesc>
+where
+    T: TryInto<Box<dyn DataSource>>,
+    <T as TryInto<Box<dyn DataSource>>>::Error: std::fmt::Debug,
+    Error: From<<T as TryInto<Box<dyn DataSource>>>::Error>,
+{
+    Ok(ChunkDesc::new(
+        primary.into(),
+        secondary.into(),
+        content.try_into()?,
+    ))
+}
+
+/// Build the structure of the Hff content.
+pub fn hff(tables: impl IntoIterator<Item = TableBuilder>) -> HffContent {
+    // Split the tables into their components.
+    let mut table_array = TableArray::new();
+    let mut chunk_array = ChunkArray::new();
+    let mut data_array = DataArray::new();
+
+    // Collect the tables into a vector so we know the length.
+    let tables = tables
+        .into_iter()
+        .map(|desc| desc.finish())
+        .collect::<Vec<_>>();
+
+    let table_count = tables.len();
+    for (index, table) in tables.into_iter().enumerate() {
+        // Determine if this table has a sibling.
+        let has_sibling = index < table_count - 1;
+        // And flatten the table.
+        table.flatten(
+            has_sibling,
+            &mut table_array,
+            &mut chunk_array,
+            &mut data_array,
+        );
     }
-    Ok(())
+    HffContent::new(table_array, chunk_array, data_array)
 }
 
-fn write_chunks<E: ByteOrder>(chunks: Vec<Chunk>, writer: &mut dyn std::io::Write) -> Result<()> {
-    for chunk in chunks {
-        chunk.write::<E>(writer)?;
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {
+        let content = hff([
+            table("p0", "s0")
+                .metadata("123")
+                .unwrap()
+                .children([table("p1", "s1")
+                    .metadata("1234")
+                    .unwrap()
+                    .chunks([
+                        chunk("c0", "cs0", "chunk 0").unwrap(),
+                        chunk("c1", "cs1", "chunk 1").unwrap(),
+                        chunk("c2", "cs2", "chunk 2").unwrap(),
+                    ])
+                    .children([
+                        table("p2", "s2").metadata("12345").unwrap().chunks([]),
+                        table("p3", "s3").metadata("123456").unwrap().chunks([]),
+                    ])])
+                .chunks([]),
+            table("p4", "s4").metadata("1234567").unwrap(),
+            table("p5", "s5")
+                .metadata("12345678")
+                .unwrap()
+                .chunks([chunk("c3", "cs3", "chunk 3").unwrap()]),
+        ]);
+
+        let mut buffer = vec![];
+        content.write::<hff_core::LE>("Test", &mut buffer).unwrap();
+
+        let (hff, mut cache) = crate::read_stream_full(&mut buffer.as_slice()).unwrap();
+        println!("{:#?}", hff);
+        println!("-----------------------------");
+        for (depth, table) in hff.depth_first() {
+            println!("-- <{}>: <{:?}>", depth, table);
+        }
+        println!("-----------------------------");
+
+        //assert!(false);
     }
-    Ok(())
-}
-
-fn write_data(data: DataBuilder, writer: &mut dyn std::io::Write) -> Result<()> {
-    data.write(writer)
 }

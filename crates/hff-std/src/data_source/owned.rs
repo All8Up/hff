@@ -27,9 +27,8 @@ impl DataSource for OwnedDataSource {
 }
 
 impl StdWriter for OwnedDataSource {
-    fn write(&mut self, writer: &mut dyn Write) -> Result<()> {
-        std::io::copy(&mut self.0.as_slice(), writer)?;
-        Ok(())
+    fn write(&mut self, writer: &mut dyn Write) -> Result<u64> {
+        Ok(std::io::copy(&mut self.0.as_slice(), writer)?)
     }
 }
 

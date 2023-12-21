@@ -5,9 +5,9 @@ pub struct DepthFirstIter<'a> {
     /// The hff structure we are following.
     hff: &'a Hff,
     /// The current index of iteration.
-    index: Option<usize>,
-    /// Stack to maintain the depth.
-    depth: Vec<usize>,
+    index: usize,
+    /// Stack of expected siblings at each depth.
+    count: Vec<usize>,
 }
 
 impl<'a> DepthFirstIter<'a> {
@@ -15,8 +15,8 @@ impl<'a> DepthFirstIter<'a> {
     pub fn new(hff: &'a Hff) -> DepthFirstIter {
         Self {
             hff,
-            index: Some(0),
-            depth: vec![],
+            index: 0,
+            count: vec![],
         }
     }
 }
@@ -26,30 +26,69 @@ impl<'a> Iterator for DepthFirstIter<'a> {
     type Item = (usize, TableView<'a>);
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(mut index) = self.index.take() {
-            let view = TableView::new(self.hff, index);
-            let depth = self.depth.len();
+        let tables = self.hff.tables_array();
 
-            index += 1;
-            if view.child_count() > 0 {
-                self.depth.push(view.child_count());
-                self.index = Some(index);
-            } else {
-                if index < self.hff.tables_array().len() {
-                    loop {
-                        let last = self.depth.pop().unwrap();
-                        if last > 1 {
-                            self.depth.push(last - 1);
-                            self.index = Some(index);
-                            break;
-                        }
-                    }
+        if self.index < tables.len() {
+            // We have more data.
+            let table = &tables[self.index];
+
+            // Remove stack entries which have expired.
+            while let Some(top) = self.count.pop() {
+                if top > 0 {
+                    self.count.push(top - 1);
+                    break;
                 }
             }
 
+            // Store the current depth before adding children.
+            let mut depth = self.count.len();
+
+            // If the table has children, add to the stack.
+            if table.child_count() > 0 {
+                self.count.push(table.child_count() as usize);
+            }
+
+            let view = TableView::new(self.hff, self.index);
+            self.index += 1;
+
+            Some((depth, view))
+        } else {
+            // We're done.
+            None
+        }
+
+        /*
+        println!("{}: {:?}", self.index, self.sibling);
+        while let Some(sibling) = self.sibling.pop() {
+            // Get the table we intend to return for information purposes.
+            let table = self.hff.tables_array()[self.index];
+
+            if sibling == self.index {
+                // We're done with the level.
+                // If the current item has more siblings, push that in.
+                if table.sibling() > 0 {
+                    self.sibling.push(self.index + table.sibling() as usize);
+                    break;
+                }
+            } else {
+                // Push the sibling back on the stack.
+                self.sibling.push(sibling);
+                // If the current table has siblings, push that on the stack.
+                if table.sibling() > 0 {
+                    self.sibling.push(self.index + table.sibling() as usize);
+                }
+                break;
+            }
+        }
+
+        if self.index < self.hff.tables_array().len() {
+            let view = TableView::new(self.hff, self.index);
+
+            self.index += 1;
             Some((depth, view))
         } else {
             None
         }
+         */
     }
 }
