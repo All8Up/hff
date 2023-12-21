@@ -9,6 +9,7 @@ repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 
 [dependencies]
+# Core structure of Hff.
 hff-core = { path = "./crates/hff-core", version = "0.2.2" }
 thiserror = "1.0.51"
 
