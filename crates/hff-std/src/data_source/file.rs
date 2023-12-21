@@ -32,9 +32,8 @@ impl DataSource for FileDataSource {
 }
 
 impl StdWriter for FileDataSource {
-    fn write(&mut self, writer: &mut dyn Write) -> Result<()> {
-        std::io::copy(&mut self.0, writer)?;
-        Ok(())
+    fn write(&mut self, writer: &mut dyn Write) -> Result<u64> {
+        Ok(std::io::copy(&mut self.0, writer)?)
     }
 }
 

@@ -1,56 +1,64 @@
-use super::{ChunkDesc, TableDesc};
-use crate::DataSource;
-use hff_core::{Ecc, Error, Result};
+use super::{ChunkArray, ChunkDesc, DataArray, TableArray, TableDesc};
+use crate::{DataSource, Ecc, Error, Result};
 
-/// Build a table.
 #[derive(Debug)]
-pub struct TableBuilder(TableDesc);
+pub struct TableBuilder {
+    primary: Ecc,
+    secondary: Ecc,
+    metadata: Option<Box<dyn DataSource>>,
+    chunks: Vec<ChunkDesc>,
+    children: Vec<TableBuilder>,
+}
 
 impl TableBuilder {
-    /// Create a new instance.
-    pub(crate) fn new(primary: Ecc, secondary: Ecc) -> Self {
-        Self(TableDesc::new(primary, secondary))
+    pub(super) fn new(primary: Ecc, secondary: Ecc) -> Self {
+        Self {
+            primary,
+            secondary,
+            metadata: None,
+            chunks: vec![],
+            children: vec![],
+        }
     }
 
-    /// Add a child table to the current table.
-    pub fn table(mut self, content: TableDesc) -> Self {
-        self.0.push_table(content);
+    pub fn metadata<T>(mut self, content: T) -> Result<Self>
+    where
+        T: TryInto<Box<dyn DataSource>>,
+        <T as TryInto<Box<dyn DataSource>>>::Error: std::fmt::Debug,
+        Error: From<<T as TryInto<Box<dyn DataSource>>>::Error>,
+    {
+        self.metadata = Some(content.try_into()?);
+        Ok(self)
+    }
+
+    pub fn children(mut self, children: impl IntoIterator<Item = TableBuilder>) -> Self {
+        self.children = children.into_iter().collect::<Vec<_>>();
         self
     }
 
-    /// Add a chunk entry to the current table.
-    pub fn chunk<T>(
-        mut self,
-        primary: impl Into<Ecc>,
-        secondary: impl Into<Ecc>,
-        data: T,
-    ) -> Result<Self>
-    where
-        T: TryInto<Box<dyn DataSource>>,
-        <T as TryInto<Box<dyn DataSource>>>::Error: std::fmt::Debug,
-        Error: From<<T as TryInto<Box<dyn DataSource>>>::Error>,
-    {
-        self.0.push_chunk(ChunkDesc::new(
-            primary.into(),
-            secondary.into(),
-            data.try_into()?,
-        ));
-        Ok(self)
+    pub fn chunks(mut self, content: impl IntoIterator<Item = ChunkDesc>) -> Self {
+        self.chunks = content.into_iter().collect::<Vec<_>>();
+        self
     }
 
-    /// Add some metadata to the current table.
-    pub fn metadata<T>(mut self, data_source: T) -> Result<Self>
-    where
-        T: TryInto<Box<dyn DataSource>>,
-        <T as TryInto<Box<dyn DataSource>>>::Error: std::fmt::Debug,
-        Error: From<<T as TryInto<Box<dyn DataSource>>>::Error>,
-    {
-        self.0.metadata(data_source.try_into()?)?;
-        Ok(self)
+    pub(super) fn finish(self) -> TableDesc {
+        TableDesc::new(
+            self.primary,
+            self.secondary,
+            self.metadata,
+            self.chunks,
+            self.children
+                .into_iter()
+                .map(|desc| desc.finish())
+                .collect(),
+        )
     }
 
-    /// End building the table.
-    pub fn end(self) -> TableDesc {
-        self.0
+    pub fn primary(&self) -> Ecc {
+        self.primary
+    }
+
+    pub fn secondary(&self) -> Ecc {
+        self.secondary
     }
 }

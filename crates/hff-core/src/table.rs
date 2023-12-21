@@ -33,10 +33,11 @@ impl Debug for Table {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "(\"{}\":\"{}\"): meta \"{}\", sib: {}, children: {}, chunks(count: {}, index: {})",
+            "(\"{}\":\"{}\"): meta \"{}:{}\", sib: {}, children: {}, chunks(count: {}, index: {})",
             self.primary.to_string(),
             self.secondary.to_string(),
-            self.metadata_length > 0,
+            self.metadata_length,
+            self.metadata_offset,
             self.sibling,
             self.child_count,
             self.chunk_count,
@@ -61,6 +62,9 @@ impl Default for Table {
 }
 
 impl Table {
+    /// Size of the table entry.
+    pub const SIZE: usize = std::mem::size_of::<Self>();
+
     /// Create a table using the builder.
     pub fn create() -> TableBuilder {
         TableBuilder::new()
@@ -79,6 +83,11 @@ impl Table {
     /// Get the metadata length.
     pub fn metadata_length(&self) -> u64 {
         self.metadata_length
+    }
+
+    /// Get the metadata length mutably
+    pub fn metadata_length_mut(&mut self) -> &mut u64 {
+        &mut self.metadata_length
     }
 
     /// Get the metadata offset in the file.

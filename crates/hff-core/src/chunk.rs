@@ -33,6 +33,9 @@ impl Debug for Chunk {
 }
 
 impl Chunk {
+    /// Size of the chunk entry.
+    pub const SIZE: usize = std::mem::size_of::<Self>();
+
     /// Create a new chunk instance.
     pub fn new(
         primary: impl Into<Ecc>,
@@ -61,6 +64,11 @@ impl Chunk {
     /// Get the length of the content.
     pub fn length(&self) -> u64 {
         self.length
+    }
+
+    /// Get the length mutably.
+    pub fn length_mut(&mut self) -> &mut u64 {
+        &mut self.length
     }
 
     /// Get the offset of the content.

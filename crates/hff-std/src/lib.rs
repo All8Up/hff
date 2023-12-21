@@ -2,23 +2,17 @@
 #![warn(missing_docs)]
 use hff_core::{Ecc, Error, Result};
 
+mod writer;
+pub use writer::{chunk, hff, table};
+
 mod data_source;
 pub use data_source::{DataSource, StdWriter};
-
-mod writer;
-pub use writer::{write_stream, TableBuilder, TableDesc};
 
 mod reader;
 pub use reader::{
     read_stream, read_stream_full, ChunkCache, ChunkIter, ChunkView, DepthFirstIter, Hff, ReadSeek,
     TableIter, TableView,
 };
-
-/// Create a table structure to be contained in the HFF.
-/// Panics if the given Ecc data is invalid.
-pub fn table(primary: impl Into<Ecc>, secondary: impl Into<Ecc>) -> TableBuilder {
-    TableBuilder::new(primary.into(), secondary.into())
-}
 
 #[cfg(test)]
 mod tests {

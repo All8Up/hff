@@ -23,7 +23,7 @@ pub trait DataSource: Debug {
 /// Extends the datasource to be able to write into a std::io::Write.
 pub trait StdWriter: DataSource {
     /// Write the data to the given stream.
-    fn write(&mut self, writer: &mut dyn Write) -> Result<()>;
+    fn write(&mut self, writer: &mut dyn Write) -> Result<u64>;
 }
 
 impl<'a> TryInto<&'a mut dyn StdWriter> for &'a mut Box<dyn DataSource> {

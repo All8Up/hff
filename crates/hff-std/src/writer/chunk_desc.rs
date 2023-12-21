@@ -1,14 +1,10 @@
-use crate::DataSource;
-use hff_core::Ecc;
+use crate::{DataSource, Error, Result};
+use hff_core::{Chunk, Ecc, Table};
 
-/// Internal description of a chunk and the data source for the contents.
 #[derive(Debug)]
-pub(crate) struct ChunkDesc {
-    /// The primary identifier for this chunk.
+pub struct ChunkDesc {
     primary: Ecc,
-    /// The secondary identifier for this chunk.
     secondary: Ecc,
-    /// The boxed chunk data source.
     data: Box<dyn DataSource>,
 }
 
@@ -32,8 +28,8 @@ impl ChunkDesc {
         self.secondary
     }
 
-    /// Get the chunk data.
-    pub fn data(self) -> Box<dyn DataSource> {
+    /// Take chunk and return the data source.
+    pub fn data_source(self) -> Box<dyn DataSource> {
         self.data
     }
 }
