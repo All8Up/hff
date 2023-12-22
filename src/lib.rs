@@ -68,8 +68,10 @@
 //! - [x] Change the table builder to allow multiple tables at the 'root' level.
 //! Currently the builder expects a single outer table to contain all others.  This
 //! is a holdover from a prior format structure which was removed.
-//! - [-] After fixing the table builder, implement the lazy header variation so compressed
+//! - [x] After fixing the table builder, implement the lazy header variation so compressed
 //! chunks do not have to be stored in memory prior to writing.
+//! - [ ] Remove the development testing and write better and more complete tests.
+//! - [ ] Better examples.
 //! - [ ] Async-std implementation of the reader.
 //! - [ ] Async-std implementation of the writer.
 //! - [ ] Tokio implementation of the reader.
