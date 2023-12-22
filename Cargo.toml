@@ -1,6 +1,6 @@
 [package]
 name = "hff"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 authors = ["All8Up <all8up@gmail.com>"]
 license-file = "LICENSE"
