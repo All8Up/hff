@@ -1,6 +1,5 @@
-use crate::{DataSource, Error, Result, StdWriter};
-use hff_core::{Chunk, Ecc, Table};
-use std::io::{copy, Write};
+use crate::{DataSource, Result, StdWriter};
+use std::io::{ Write};
 
 #[derive(Debug)]
 pub struct DataArray {

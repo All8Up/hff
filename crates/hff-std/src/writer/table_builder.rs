@@ -1,4 +1,4 @@
-use super::{ChunkArray, ChunkDesc, DataArray, TableArray, TableDesc};
+use super::{ChunkDesc, TableDesc};
 use crate::{DataSource, Ecc, Error, Result};
 
 #[derive(Debug)]

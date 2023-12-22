@@ -1,6 +1,5 @@
-use super::TableDesc;
-use crate::{DataSource, Error, Result};
-use hff_core::{ByteOrder, Chunk, Ecc, Table};
+use crate::Result;
+use hff_core::{ByteOrder, Table};
 use std::{
     io::Write,
     ops::{Index, IndexMut},

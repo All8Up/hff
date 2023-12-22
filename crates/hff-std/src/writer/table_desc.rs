@@ -1,5 +1,5 @@
 use super::{ChunkArray, ChunkDesc, DataArray, TableArray};
-use crate::{DataSource, Ecc, Error, Result};
+use crate::{DataSource, Ecc};
 use hff_core::{Chunk, Table};
 
 /// Description of a table.
@@ -33,16 +33,6 @@ impl TableDesc {
             chunks,
             children,
         }
-    }
-
-    /// Get the primary identifier.
-    pub fn primary(&self) -> Ecc {
-        self.primary
-    }
-
-    /// Get the secondary identifier.
-    pub fn secondary(&self) -> Ecc {
-        self.secondary
     }
 
     pub(super) fn flatten(
@@ -106,7 +96,7 @@ impl TableDesc {
             let sibling = (tables.len() - table_index) as u32;
 
             // Get the table we pushed.
-            let mut table = &mut tables[table_index];
+            let table = &mut tables[table_index];
             *table.1.sibling_mut() = sibling;
         }
     }

@@ -41,7 +41,7 @@ impl<'a> Iterator for DepthFirstIter<'a> {
             }
 
             // Store the current depth before adding children.
-            let mut depth = self.count.len();
+            let depth = self.count.len();
 
             // If the table has children, add to the stack.
             if table.child_count() > 0 {

@@ -1,5 +1,5 @@
-use crate::{DataSource, Error, Result};
-use hff_core::{ByteOrder, Chunk, Ecc, Table};
+use crate::Result;
+use hff_core::{ByteOrder, Chunk};
 use std::{
     io::Write,
     ops::{Index, IndexMut},

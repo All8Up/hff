@@ -1,5 +1,5 @@
 use crate::{DataSource, Error, Result};
-use hff_core::{Chunk, Ecc, Table};
+use hff_core::Ecc;
 
 mod table_array;
 pub(crate) use table_array::TableArray;

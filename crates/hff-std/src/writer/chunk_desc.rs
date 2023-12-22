@@ -1,5 +1,5 @@
-use crate::{DataSource, Error, Result};
-use hff_core::{Chunk, Ecc, Table};
+use crate::DataSource;
+use hff_core::Ecc;
 
 #[derive(Debug)]
 pub struct ChunkDesc {

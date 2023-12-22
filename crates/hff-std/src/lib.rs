@@ -17,62 +17,70 @@ pub use reader::{
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::reader::{ChunkCache, Hff};
+    use crate::{
+        reader::{ChunkCache, Hff},
+        writer::HffContent,
+    };
 
-    fn test_table() -> Result<TableDesc> {
-        Ok(table("Test", "TestSub")
+    fn test_table() -> Result<HffContent> {
+        Ok(hff([
+            table("Test", "TestSub")
             .metadata("This is some metadata attached to the table.")?
-            .chunk("TRC0", "TRS0", "Chunks can be most types.")?
-            .chunk(
-                "TRC1",
-                "TRS1",
-                "Both chunks and tables will maintain their order within the file.",
-            )?
-            .chunk(
-                "TRC2",
-                "TRS2",
-                "But, there is no relationship maintained between chunks and tables.",
-            )?
-            .chunk(
-                "TRC3",
-                "TRS3",
-                "In other words, we are creating two lists, one for chunks and one for tables.",
-            )?
-            .chunk(
-                "TRC4",
-                "TRS4",
-                "So, the order of adding chunks inbetween tables has no impact on the result.",
-            )?
-            .chunk(
-                "TRC5",
-                "TRS5",
-                "Only which table the chunk is associated with will matter..",
-            )?
-            .table(
+            .chunks([
+                chunk("TRC0", "TRS0", "Chunks can be most types.")?,
+                chunk(
+                    "TRC1",
+                    "TRS1",
+                    "Both chunks and tables will maintain their order within the file.",
+                )?,
+                chunk(
+                    "TRC2",
+                    "TRS2",
+                    "But, there is no relationship maintained between chunks and tables.",
+                )?,
+                chunk(
+                    "TRC3",
+                    "TRS3",
+                    "In other words, we are creating two lists, one for chunks and one for tables.",
+                )?,
+                chunk(
+                    "TRC4",
+                    "TRS4",
+                    "So, the order of adding chunks inbetween tables has no impact on the result.",
+                )?,
+                chunk(
+                    "TRC5",
+                    "TRS5",
+                    "Only which table the chunk is associated with will matter..",
+                )?,
+            ])
+            .children([
                 table("C0Prime", "C0Sub")
-                    .metadata("Each table has its own metadata.")?
-                    .chunk("C0C0", "C0S0", "Each table also has its own set of chunks.")?
-                    .table(
-                        table("C1Prime", "C1Sub")
-                            .chunk(
-                                "C1C0",
-                                "C1S0",
-                                "They will only be listed while iterating that specific table.",
-                            )?
-                            .end(),
-                    )
-                    .table(
-                        table("C2Prime", "C2Sub")
-                            .table(table("C3Prime", "C3Sub")
-                            .chunk("C2C0", "C2S0", "Tables don't *have* to have chunks, tables can be used to simply contain other tables.")?
-                            .end())
-                            .end(),
-                    )
-                    .end(),
-            )
-            .table(table("C4Prime", "C4Sub").chunk("C4C0", "C4S0","The last chunk in the overall file.")?
-                .metadata("And we're done.")?.end())
-            .end())
+                .metadata("Each table has its own metadata.")?
+                .chunks([chunk("C0C0", "C0S0", "Each table also has its own set of chunks.")?])
+                .children([
+                    table("C1Prime", "C1Sub")
+                    .chunks([
+                        chunk(
+                            "C1C0",
+                            "C1S0",
+                            "They will only be listed while iterating that specific table.",
+                        )?
+                    ]),
+                    table("C2Prime", "C2Sub")
+                    .children([
+                        table("C3Prime", "C3Sub")
+                        .chunks([
+                            chunk("C2C0", "C2S0", "Tables don't *have* to have chunks, tables can be used to simply contain other tables.")?
+                        ])
+                    ])
+                ]),
+                table("C4Prime", "C4Sub").chunks([
+                    chunk("C4C0", "C4S0","The last chunk in the overall file.")?
+                ])
+                .metadata("And we're done.")?
+            ])
+        ]))
     }
 
     fn checks(hff: &Hff, cache: &mut ChunkCache) {
@@ -177,10 +185,10 @@ mod tests {
     fn test() {
         // Simple dev test for structure.
         {
-            let table = test_table().unwrap();
+            let content = test_table().unwrap();
             let mut buffer = vec![];
 
-            assert!(write_stream::<hff_core::NE>("Test", table, &mut buffer).is_ok());
+            assert!(content.write::<hff_core::NE>("Test", &mut buffer).is_ok());
 
             // Read it back in and iterate.
             let (hff, mut cache) = read_stream_full(&mut buffer.as_slice()).unwrap();
@@ -189,10 +197,10 @@ mod tests {
 
         // Simple dev test for structure.
         {
-            let table = test_table().unwrap();
+            let content = test_table().unwrap();
             let mut buffer = vec![];
 
-            assert!(write_stream::<hff_core::OP>("Test", table, &mut buffer).is_ok());
+            assert!(content.write::<hff_core::OP>("Test", &mut buffer).is_ok());
 
             // Read it back in and iterate.
             let (hff, mut cache) = read_stream_full(&mut buffer.as_slice()).unwrap();

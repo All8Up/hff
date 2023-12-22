@@ -75,6 +75,12 @@ impl HffContent {
         }
     }
 
+    /// Calculate the offset from the start of the file to the start of
+    /// the data blob.
+    pub fn offset_to_blob(&self) -> usize {
+        Header::SIZE + self.tables.len() * Table::SIZE + self.chunks.len() * Chunk::SIZE
+    }
+
     /// Write the content to the given stream without seek abilities.
     pub fn write<E: ByteOrder>(
         mut self,
@@ -86,8 +92,7 @@ impl HffContent {
         // Prepare all the data in the data array so we have offsets and length.
         let offset_len = self.data.prepare()?;
         // Compute the size of the header so we can offset the data blob information.
-        let header_offset =
-            Header::SIZE + self.tables.len() * Table::SIZE + self.chunks.len() * Chunk::SIZE;
+        let header_offset = self.offset_to_blob();
 
         // Update the table metadata length/offset and chunk length/offset.
         self.update_data(header_offset as u64, &offset_len);
