@@ -102,7 +102,7 @@ mod tests {
         let mut buffer = vec![];
         content.write::<hff_core::LE>("Test", &mut buffer).unwrap();
 
-        let (hff, mut cache) = crate::read_stream_full(&mut buffer.as_slice()).unwrap();
+        let (hff, _cache) = crate::read_stream_full(&mut buffer.as_slice()).unwrap();
         println!("{:#?}", hff);
         println!("-----------------------------");
         for (depth, table) in hff.depth_first() {

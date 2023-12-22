@@ -16,6 +16,8 @@ pub use reader::{
 
 #[cfg(test)]
 mod tests {
+    use std::io::Seek;
+
     use super::*;
     use crate::{
         reader::{ChunkCache, Hff},
@@ -27,31 +29,31 @@ mod tests {
             table("Test", "TestSub")
             .metadata("This is some metadata attached to the table.")?
             .chunks([
-                chunk("TRC0", "TRS0", "Chunks can be most types.")?,
+                chunk("TRC0", "TRS0", "Chunks can be most types.  This is passed as an arbitrary byte array.".as_bytes())?,
                 chunk(
                     "TRC1",
                     "TRS1",
-                    "Both chunks and tables will maintain their order within the file.",
+                    "Chunks provided to the table will maintain their order.",
                 )?,
                 chunk(
                     "TRC2",
                     "TRS2",
-                    "But, there is no relationship maintained between chunks and tables.",
+                    "So, iterating through the chunks has the same order as presented here.",
                 )?,
                 chunk(
                     "TRC3",
                     "TRS3",
-                    "In other words, we are creating two lists, one for chunks and one for tables.",
+                    "Chunks can be supplied with data from multiple sources.",
                 )?,
                 chunk(
                     "TRC4",
                     "TRS4",
-                    "So, the order of adding chunks inbetween tables has no impact on the result.",
+                    "In fact, providing a std::path::Path will pull the content of a file in as the chunk data.",
                 )?,
                 chunk(
                     "TRC5",
                     "TRS5",
-                    "Only which table the chunk is associated with will matter..",
+                    "In the case of a lazy_write, the file will be opened and streamed directly to the writer without being buffered in memory.",
                 )?,
             ])
             .children([
@@ -124,32 +126,32 @@ mod tests {
             let root = hff.tables().next().unwrap();
 
             let test_data = [
-                ("TRC0", "TRS0", "Chunks can be most types."),
+                ("TRC0", "TRS0", "Chunks can be most types.  This is passed as an arbitrary byte array."),
                 (
                     "TRC1",
                     "TRS1",
-                    "Both chunks and tables will maintain their order within the file.",
+                    "Chunks provided to the table will maintain their order.",
                 ),
                 (
                     "TRC2",
                     "TRS2",
-                    "But, there is no relationship maintained between chunks and tables.",
+                    "So, iterating through the chunks has the same order as presented here.",
                 ),
                 (
                     "TRC3",
                     "TRS3",
-                    "In other words, we are creating two lists, one for chunks and one for tables.",
+                    "Chunks can be supplied with data from multiple sources.",
                 ),
                 (
                     "TRC4",
                     "TRS4",
-                    "So, the order of adding chunks inbetween tables has no impact on the result.",
+                    "In fact, providing a std::path::Path will pull the content of a file in as the chunk data.",
                 ),
                 (
                     "TRC5",
                     "TRS5",
-                    "Only which table the chunk is associated with will matter..",
-                ),
+                    "In the case of a lazy_write, the file will be opened and streamed directly to the writer without being buffered in memory.",
+                )
             ];
             for (index, chunk) in root.chunks().enumerate() {
                 let test_entry = test_data[index];
@@ -186,12 +188,15 @@ mod tests {
         // Simple dev test for structure.
         {
             let content = test_table().unwrap();
-            let mut buffer = vec![];
-
-            assert!(content.write::<hff_core::NE>("Test", &mut buffer).is_ok());
+            let buffer = vec![];
+            let mut writer = std::io::Cursor::new(buffer);
+            assert!(content
+                .lazy_write::<hff_core::NE>("Test", &mut writer)
+                .is_ok());
 
             // Read it back in and iterate.
-            let (hff, mut cache) = read_stream_full(&mut buffer.as_slice()).unwrap();
+            writer.rewind().unwrap();
+            let (hff, mut cache) = read_stream_full(&mut writer).unwrap();
             checks(&hff, &mut cache);
         }
 

@@ -3,6 +3,12 @@ use crate::Result;
 use hff_core::{ByteOrder, Chunk, Ecc, Header, Table};
 use std::io::{Seek, Write};
 
+/// Helper trait for lazy writing.
+pub trait WriteSeek: Write + Seek {}
+
+/// Blanket implementation for anything viable.
+impl<T: Write + Seek> WriteSeek for T {}
+
 /// Content to be written into an hff stream.
 #[derive(Debug)]
 pub struct HffContent {
@@ -11,7 +17,7 @@ pub struct HffContent {
     /// The chunks.
     chunks: ChunkArray,
     /// The data blob.
-    data: DataArray,
+    data: Option<DataArray>,
 }
 
 impl HffContent {
@@ -20,7 +26,7 @@ impl HffContent {
         Self {
             tables,
             chunks,
-            data,
+            data: Some(data),
         }
     }
 
@@ -75,10 +81,15 @@ impl HffContent {
         }
     }
 
+    /// Size of the content arrays.
+    pub fn arrays_size(&self) -> usize {
+        self.tables.len() * Table::SIZE + self.chunks.len() * Chunk::SIZE
+    }
+
     /// Calculate the offset from the start of the file to the start of
     /// the data blob.
     pub fn offset_to_blob(&self) -> usize {
-        Header::SIZE + self.tables.len() * Table::SIZE + self.chunks.len() * Chunk::SIZE
+        Header::SIZE + self.arrays_size()
     }
 
     /// Write the content to the given stream without seek abilities.
@@ -90,16 +101,16 @@ impl HffContent {
         self.write_header::<E>(content_type.into(), writer)?;
 
         // Prepare all the data in the data array so we have offsets and length.
-        let offset_len = self.data.prepare()?;
-        // Compute the size of the header so we can offset the data blob information.
-        let header_offset = self.offset_to_blob();
+        let mut data = self.data.take().unwrap();
+        let offset_len = data.prepare()?;
 
         // Update the table metadata length/offset and chunk length/offset.
-        self.update_data(header_offset as u64, &offset_len);
+        self.update_data(self.offset_to_blob() as u64, &offset_len);
 
         self.tables.write::<E>(writer)?;
         self.chunks.write::<E>(writer)?;
-        self.data.write(writer)?;
+        let _test = data.write(writer)?;
+        assert_eq!(_test, offset_len);
 
         Ok(())
     }
@@ -107,14 +118,31 @@ impl HffContent {
     /// Write the content to the given stream.  This requires seek because we
     /// update the table and chunk entries 'after' writing the data blob and as
     /// such, we have to go back and write them.
-    pub fn lazy_write<E: ByteOrder, W: Write + Seek>(
-        self,
+    pub fn lazy_write<E: ByteOrder>(
+        mut self,
         content_type: impl Into<Ecc>,
-        writer: &mut W,
+        mut writer: &mut dyn WriteSeek,
     ) -> Result<()> {
-        self.write_header::<E>(content_type.into(), writer)?;
+        self.write_header::<E>(content_type.into(), &mut writer)?;
 
-        unimplemented!("TODO.");
+        // Write zero's for the table and chunk array.
+        // Use this rather than skipping in order to avoid any questionable
+        // differences between different backing types.
+        writer.write_all(&mut vec![0; self.arrays_size()])?;
+
+        // Write the data and record the offset/length information.
+        let data = self.data.take().unwrap();
+        let offset_len = data.write(&mut writer)?;
+
+        // Update the table metadata length/offset and chunk length/offset.
+        self.update_data(self.offset_to_blob() as u64, &offset_len);
+
+        // Seek back to the tables/chunks.
+        writer.seek(std::io::SeekFrom::Start(Header::SIZE as u64))?;
+
+        // And write the tables and chunks.
+        self.tables.write::<E>(&mut writer)?;
+        self.chunks.write::<E>(&mut writer)?;
 
         Ok(())
     }
