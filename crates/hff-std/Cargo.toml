@@ -1,6 +1,6 @@
 [package]
 name = "hff-std"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2021"
 authors = ["All8Up <all8up@gmail.com>"]
 license-file = "LICENSE"
@@ -10,3 +10,10 @@ readme = "README.md"
 
 [dependencies]
 hff-core = { path = "./../hff-core", version = "0.3.1" }
+
+# Support for compressed chunks.
+xz2 = { version = "0.1.7", optional = true }
+
+[features]
+default = []
+compression = ["dep:xz2"]

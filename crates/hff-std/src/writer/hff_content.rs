@@ -11,18 +11,18 @@ impl<T: Write + Seek> WriteSeek for T {}
 
 /// Content to be written into an hff stream.
 #[derive(Debug)]
-pub struct HffContent {
+pub struct HffContent<'a> {
     /// The tables.
     tables: TableArray,
     /// The chunks.
     chunks: ChunkArray,
     /// The data blob.
-    data: Option<DataArray>,
+    data: Option<DataArray<'a>>,
 }
 
-impl HffContent {
+impl<'a> HffContent<'a> {
     /// Create a new content instance.
-    pub fn new(tables: TableArray, chunks: ChunkArray, data: DataArray) -> Self {
+    pub fn new(tables: TableArray, chunks: ChunkArray, data: DataArray<'a>) -> Self {
         Self {
             tables,
             chunks,

@@ -1,19 +1,19 @@
-use crate::{DataSource, Result, StdWriter};
-use std::io::{ Write};
+use crate::{DataSource, Result};
+use std::io::Write;
 
 #[derive(Debug)]
-pub struct DataArray {
-    data: Vec<Box<dyn DataSource>>,
+pub struct DataArray<'a> {
+    data: Vec<DataSource<'a>>,
 }
 
-impl DataArray {
+impl<'a> DataArray<'a> {
     /// Create a new empty data array.
     pub fn new() -> Self {
         Self { data: vec![] }
     }
 
     /// Push a new data source onto the array.
-    pub fn push(&mut self, item: Box<dyn DataSource>) {
+    pub fn push(&mut self, item: DataSource<'a>) {
         self.data.push(item);
     }
 
@@ -23,7 +23,7 @@ impl DataArray {
         let mut offset = 0;
         for entry in &mut self.data {
             let length = if let Some(length) = entry.len() {
-                length
+                length as u64
             } else {
                 entry.prepare()?
             };
@@ -45,9 +45,24 @@ impl DataArray {
         // Track where we are in the writer, starting from zero.
         let mut offset = 0;
         for mut item in self.data {
-            // Convert to a std writer and write the data.
-            let std_writer: &mut dyn StdWriter = (&mut item).try_into()?;
-            let length = std_writer.write(writer)?;
+            // Prepare each item.
+            // This is only for compressed data (at this time) to perform
+            // the compression.  Using std write here means it all has to
+            // be buffered into memory.
+            item.prepare()?;
+
+            // Write in the appropriate manner.
+            let length = match item {
+                DataSource::File(mut f, _) => std::io::copy(&mut f, writer)?,
+                DataSource::Owned(data) => std::io::copy(&mut data.as_slice(), writer)?,
+                DataSource::Ref(mut data) => std::io::copy(&mut data, writer)?,
+                #[cfg(feature = "compression")]
+                DataSource::Compressed(_, _, data) => {
+                    std::io::copy(&mut data.unwrap().as_slice(), writer)?
+                }
+            };
+
+            // Record the offset and length.
             offset_len.push((offset as u64, length));
 
             // What is the padding requirement?

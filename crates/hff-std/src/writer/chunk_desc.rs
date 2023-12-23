@@ -2,15 +2,15 @@ use crate::DataSource;
 use hff_core::Ecc;
 
 #[derive(Debug)]
-pub struct ChunkDesc {
+pub struct ChunkDesc<'a> {
     primary: Ecc,
     secondary: Ecc,
-    data: Box<dyn DataSource>,
+    data: DataSource<'a>,
 }
 
-impl ChunkDesc {
+impl<'a> ChunkDesc<'a> {
     /// Create a new chunk desc.
-    pub fn new(primary: Ecc, secondary: Ecc, data: Box<dyn DataSource>) -> Self {
+    pub fn new(primary: Ecc, secondary: Ecc, data: DataSource<'a>) -> Self {
         Self {
             primary,
             secondary,
@@ -29,7 +29,7 @@ impl ChunkDesc {
     }
 
     /// Take chunk and return the data source.
-    pub fn data_source(self) -> Box<dyn DataSource> {
+    pub fn data_source(self) -> DataSource<'a> {
         self.data
     }
 }

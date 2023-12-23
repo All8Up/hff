@@ -62,7 +62,13 @@
 //! - [x] More metadata/chunk data source types.  Most things which can be turned into
 //! Vec<u8> exist now, read trait for anything which can be immediately pulled in at
 //! runtime and finally std::path::{Path, PathBuf} to pull data from a file.
-//! - [ ] Yet more metadata/chunk data source types.  Specifically serde and compressed.
+//! - [x] Yet more metadata/chunk data source types.  Specifically serde and compressed.
+//! NOTE: Direct serde support doesn't make sense really.  The user has to choose the
+//! serialization format and the various crates have different ways to serialize to/from
+//! the representation.  So, just leave it to the user to call serialize(&thing)?.as_bytes()
+//! and the reverse.
+//! Compression is done and uses lzma due to the desired performance versus compression.
+//! Pass in a tuple with: (level, any valid data source) where level is 0-9.
 //! - [ ] Utility types for metadata.  For instance a simple key=value string map and a
 //! simple array of strings.
 //! - [x] Change the table builder to allow multiple tables at the 'root' level.

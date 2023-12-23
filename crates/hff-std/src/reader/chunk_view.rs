@@ -41,4 +41,19 @@ impl<'a> ChunkView<'a> {
             Ok(vec![])
         }
     }
+
+    /// Decompress the chunk data.
+    #[cfg(feature = "compression")]
+    pub fn decompressed(&self, source: &mut dyn ReadSeek) -> Result<Vec<u8>> {
+        let source = self.data(source)?;
+        if source.len() > 0 {
+            let source: &mut dyn std::io::Read = &mut source.as_slice();
+            let mut decoder = xz2::read::XzDecoder::new(source);
+            let mut result = vec![];
+            std::io::copy(&mut decoder, &mut result)?;
+            Ok(result)
+        } else {
+            Ok(vec![])
+        }
+    }
 }

@@ -23,16 +23,20 @@ mod hff_content;
 pub use hff_content::HffContent;
 
 /// Start building a new table.
-pub fn table(primary: impl Into<Ecc>, secondary: impl Into<Ecc>) -> TableBuilder {
+pub fn table<'a>(primary: impl Into<Ecc>, secondary: impl Into<Ecc>) -> TableBuilder<'a> {
     TableBuilder::new(primary.into(), secondary.into())
 }
 
 /// Build a new chunk.
-pub fn chunk<T>(primary: impl Into<Ecc>, secondary: impl Into<Ecc>, content: T) -> Result<ChunkDesc>
+pub fn chunk<'a, T>(
+    primary: impl Into<Ecc>,
+    secondary: impl Into<Ecc>,
+    content: T,
+) -> Result<ChunkDesc<'a>>
 where
-    T: TryInto<Box<dyn DataSource>>,
-    <T as TryInto<Box<dyn DataSource>>>::Error: std::fmt::Debug,
-    Error: From<<T as TryInto<Box<dyn DataSource>>>::Error>,
+    T: TryInto<DataSource<'a>>,
+    <T as TryInto<DataSource<'a>>>::Error: std::fmt::Debug,
+    Error: From<<T as TryInto<DataSource<'a>>>::Error>,
 {
     Ok(ChunkDesc::new(
         primary.into(),
@@ -42,7 +46,7 @@ where
 }
 
 /// Build the structure of the Hff content.
-pub fn hff(tables: impl IntoIterator<Item = TableBuilder>) -> HffContent {
+pub fn hff<'a>(tables: impl IntoIterator<Item = TableBuilder<'a>>) -> HffContent<'a> {
     // Split the tables into their components.
     let mut table_array = TableArray::new();
     let mut chunk_array = ChunkArray::new();

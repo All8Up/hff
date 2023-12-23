@@ -6,7 +6,7 @@ mod writer;
 pub use writer::{chunk, hff, table};
 
 mod data_source;
-pub use data_source::{DataSource, StdWriter};
+pub use data_source::DataSource;
 
 mod reader;
 pub use reader::{
@@ -24,7 +24,7 @@ mod tests {
         writer::HffContent,
     };
 
-    fn test_table() -> Result<HffContent> {
+    fn test_table<'a>() -> Result<HffContent<'a>> {
         Ok(hff([
             table("Test", "TestSub")
             .metadata("This is some metadata attached to the table.")?
@@ -50,6 +50,17 @@ mod tests {
                     "TRS4",
                     "In fact, providing a std::path::Path will pull the content of a file in as the chunk data.",
                 )?,
+                // Compress the string if compression is enabled.
+                #[cfg(feature = "compression")]
+                chunk(
+                    "TRC5",
+                    "TRS5",
+                    // Compressing chunks is just sending in a tuple with the compression level.
+                    // Using lzma for compression and the level is expected to be between 0 and 9.
+                    (9, "In the case of a lazy_write, the file will be opened and streamed directly to the writer without being buffered in memory."),
+                )?,
+                // Don't compress the string if compression is disabled.
+                #[cfg(not(feature = "compression"))]
                 chunk(
                     "TRC5",
                     "TRS5",
@@ -157,11 +168,27 @@ mod tests {
                 let test_entry = test_data[index];
                 assert_eq!(Ecc::new(test_entry.0), chunk.primary());
                 assert_eq!(Ecc::new(test_entry.1), chunk.secondary());
-                assert_eq!(chunk.size(), test_entry.2.len());
-                assert_eq!(
-                    chunk.data(cache).unwrap(),
-                    Vec::from(test_entry.2.as_bytes())
-                );
+
+                #[cfg(feature = "compression")]
+                if chunk.secondary() == Ecc::new("TRS5") {
+                    let decompressed = chunk.decompressed(cache).unwrap();
+                    assert_eq!(decompressed.len(), test_entry.2.len());
+                    assert_eq!(decompressed, Vec::from(test_entry.2.as_bytes()));
+                } else {
+                    assert_eq!(chunk.size(), test_entry.2.len());
+                    assert_eq!(
+                        chunk.data(cache).unwrap(),
+                        Vec::from(test_entry.2.as_bytes())
+                    );
+                }
+                #[cfg(not(feature = "compression"))]
+                {
+                    assert_eq!(chunk.size(), test_entry.2.len());
+                    assert_eq!(
+                        chunk.data(cache).unwrap(),
+                        Vec::from(test_entry.2.as_bytes())
+                    );
+                }
             }
 
             {

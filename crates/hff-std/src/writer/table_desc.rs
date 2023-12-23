@@ -4,27 +4,27 @@ use hff_core::{Chunk, Table};
 
 /// Description of a table.
 #[derive(Debug)]
-pub struct TableDesc {
+pub struct TableDesc<'a> {
     /// The primary identifier.
     primary: Ecc,
     /// The secondary identifier.
     secondary: Ecc,
     /// The metadata for the table.
-    metadata: Option<Box<dyn DataSource>>,
+    metadata: Option<DataSource<'a>>,
     /// The chunks attached to the table.
-    chunks: Vec<ChunkDesc>,
+    chunks: Vec<ChunkDesc<'a>>,
     /// The child tables.
-    children: Vec<TableDesc>,
+    children: Vec<TableDesc<'a>>,
 }
 
-impl TableDesc {
+impl<'a> TableDesc<'a> {
     /// Create a new table description.
     pub fn new(
         primary: Ecc,
         secondary: Ecc,
-        metadata: Option<Box<dyn DataSource>>,
-        chunks: Vec<ChunkDesc>,
-        children: Vec<TableDesc>,
+        metadata: Option<DataSource<'a>>,
+        chunks: Vec<ChunkDesc<'a>>,
+        children: Vec<TableDesc<'a>>,
     ) -> Self {
         Self {
             primary,
@@ -40,7 +40,7 @@ impl TableDesc {
         has_sibling: bool,
         tables: &mut TableArray,
         chunks: &mut ChunkArray,
-        data: &mut DataArray,
+        data: &mut DataArray<'a>,
     ) {
         // Adjust and push this table into the arrays.
 

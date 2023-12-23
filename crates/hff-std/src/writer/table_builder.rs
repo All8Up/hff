@@ -2,15 +2,15 @@ use super::{ChunkDesc, TableDesc};
 use crate::{DataSource, Ecc, Error, Result};
 
 #[derive(Debug)]
-pub struct TableBuilder {
+pub struct TableBuilder<'a> {
     primary: Ecc,
     secondary: Ecc,
-    metadata: Option<Box<dyn DataSource>>,
-    chunks: Vec<ChunkDesc>,
-    children: Vec<TableBuilder>,
+    metadata: Option<DataSource<'a>>,
+    chunks: Vec<ChunkDesc<'a>>,
+    children: Vec<TableBuilder<'a>>,
 }
 
-impl TableBuilder {
+impl<'a> TableBuilder<'a> {
     pub(super) fn new(primary: Ecc, secondary: Ecc) -> Self {
         Self {
             primary,
@@ -23,25 +23,25 @@ impl TableBuilder {
 
     pub fn metadata<T>(mut self, content: T) -> Result<Self>
     where
-        T: TryInto<Box<dyn DataSource>>,
-        <T as TryInto<Box<dyn DataSource>>>::Error: std::fmt::Debug,
-        Error: From<<T as TryInto<Box<dyn DataSource>>>::Error>,
+        T: TryInto<DataSource<'a>>,
+        <T as TryInto<DataSource<'a>>>::Error: std::fmt::Debug,
+        Error: From<<T as TryInto<DataSource<'a>>>::Error>,
     {
         self.metadata = Some(content.try_into()?);
         Ok(self)
     }
 
-    pub fn children(mut self, children: impl IntoIterator<Item = TableBuilder>) -> Self {
+    pub fn children(mut self, children: impl IntoIterator<Item = TableBuilder<'a>>) -> Self {
         self.children = children.into_iter().collect::<Vec<_>>();
         self
     }
 
-    pub fn chunks(mut self, content: impl IntoIterator<Item = ChunkDesc>) -> Self {
+    pub fn chunks(mut self, content: impl IntoIterator<Item = ChunkDesc<'a>>) -> Self {
         self.chunks = content.into_iter().collect::<Vec<_>>();
         self
     }
 
-    pub(super) fn finish(self) -> TableDesc {
+    pub(super) fn finish(self) -> TableDesc<'a> {
         TableDesc::new(
             self.primary,
             self.secondary,
