@@ -73,7 +73,12 @@ impl Ecc {
 
     /// Compare the Ecc's in two ways, native and opposing endians.
     /// If equivalent, returns Some with the endianess otherwise None.
+    /// NOTE: Will panic if rhs is a symetric id where endian can not
+    /// be detected.
     pub fn endian(&self, rhs: Self) -> Option<Endian> {
+        if rhs.swap_bytes() == rhs {
+            panic!("Does not work for symetric ID's.")
+        }
         if self.0 == rhs.0 {
             Some(crate::NATIVE_ENDIAN)
         } else if self.0 == rhs.0.swap_bytes() {

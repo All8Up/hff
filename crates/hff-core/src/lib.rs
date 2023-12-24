@@ -30,3 +30,6 @@ pub use table::Table;
 // A chunk in the structure.
 mod chunk;
 pub use chunk::Chunk;
+
+// Re-export byte order.
+pub use byteorder;

@@ -14,6 +14,8 @@ pub use reader::{
     TableIter, TableView,
 };
 
+pub mod utilities;
+
 #[cfg(test)]
 mod tests {
     use std::io::Seek;

@@ -69,7 +69,7 @@
 //! and the reverse.
 //! Compression is done and uses lzma due to the desired performance versus compression.
 //! Pass in a tuple with: (level, any valid data source) where level is 0-9.
-//! - [ ] Utility types for metadata.  For instance a simple key=value string map and a
+//! - [x] Utility types for metadata.  For instance a simple key=value string map and a
 //! simple array of strings.
 //! - [x] Change the table builder to allow multiple tables at the 'root' level.
 //! Currently the builder expects a single outer table to contain all others.  This
