@@ -10,11 +10,11 @@ readme = "README.md"
 
 [dependencies]
 # Core structure of Hff.
-hff-core = { path = "./crates/hff-core", version = "0.3.2" }
+hff-core = { path = "./crates/hff-core", version = "0.3.3" }
 thiserror = "1.0.51"
 
 # Synchronous version.  Always available.
-hff-std = { path = "./crates/hff-std", version = "0.3.5" }
+hff-std = { path = "./crates/hff-std", version = "0.3.6" }
 
 # Support for async-std.
 async-std = { version = "1.12.0", optional = true }
