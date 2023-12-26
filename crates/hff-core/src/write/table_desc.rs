@@ -1,6 +1,5 @@
-use super::{ChunkArray, ChunkDesc, DataArray, TableArray};
-use crate::{DataSource, Ecc};
-use hff_core::{Chunk, Table};
+use super::{ChunkArray, ChunkDesc, DataArray, DataSource, TableArray};
+use crate::{Chunk, Ecc, Table};
 
 /// Description of a table.
 #[derive(Debug)]

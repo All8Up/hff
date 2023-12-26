@@ -1,23 +1,8 @@
 use crate::{DataSource, Error, Result};
 use hff_core::{
-    write::{ChunkArray, TableArray},
+    write::{ChunkArray, ChunkDesc, DataArray, HffDesc, TableArray, TableBuilder},
     Ecc,
 };
-
-mod data_array;
-pub(crate) use data_array::DataArray;
-
-mod chunk_desc;
-pub(crate) use chunk_desc::ChunkDesc;
-
-mod table_desc;
-pub(crate) use table_desc::TableDesc;
-
-mod table_builder;
-pub(crate) use table_builder::TableBuilder;
-
-mod hff_desc;
-pub use hff_desc::HffDesc;
 
 /// Start building a new table.
 pub fn table<'a>(primary: impl Into<Ecc>, secondary: impl Into<Ecc>) -> TableBuilder<'a> {

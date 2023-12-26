@@ -1,6 +1,5 @@
 use super::{ChunkArray, DataArray, TableArray};
-use crate::Result;
-use hff_core::{ByteOrder, Chunk, Ecc, Header, Table};
+use crate::{ByteOrder, Chunk, Ecc, Header, Result, Table};
 use std::io::{Seek, Write};
 
 /// Helper trait for lazy writing.

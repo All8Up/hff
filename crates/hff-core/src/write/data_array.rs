@@ -1,11 +1,14 @@
-use crate::{DataSource, Result};
+use super::DataSource;
+use crate::Result;
 use std::{
     io::Write,
     ops::{Deref, DerefMut},
 };
 
+/// Storage of data sources for writing the hff content.
 #[derive(Debug)]
 pub struct DataArray<'a> {
+    /// The vector of data sources.
     data: Vec<DataSource<'a>>,
 }
 

@@ -1,10 +1,14 @@
-use crate::DataSource;
-use hff_core::Ecc;
+use super::DataSource;
+use crate::Ecc;
 
+/// An intermediate chunk description.
 #[derive(Debug)]
 pub struct ChunkDesc<'a> {
+    /// The primary identifier.
     primary: Ecc,
+    /// The secondary identifier.
     secondary: Ecc,
+    /// The source of the chunk data.
     data: DataSource<'a>,
 }
 
