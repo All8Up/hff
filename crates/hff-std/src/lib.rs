@@ -8,8 +8,6 @@ pub use read::*;
 mod write;
 pub use write::*;
 
-pub mod utilities;
-
 #[cfg(test)]
 mod tests {
     use super::*;

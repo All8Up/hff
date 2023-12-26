@@ -37,5 +37,8 @@ pub mod read;
 // Write support.
 pub mod write;
 
+// General utilities.
+pub mod utilities;
+
 // Re-export byte order.
 pub use byteorder;

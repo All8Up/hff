@@ -1,5 +1,5 @@
 use super::StringVec;
-use hff_core::{
+use crate::{
     byteorder::{ByteOrder, ReadBytesExt, WriteBytesExt},
     Ecc, Endian, Error, Result, BE, LE, NE,
 };
