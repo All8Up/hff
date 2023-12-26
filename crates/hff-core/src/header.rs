@@ -72,6 +72,18 @@ impl Header {
         self.chunk_count
     }
 
+    /// Convert the header to a byte vector.
+    pub fn to_bytes<E: ByteOrder>(self) -> Result<Vec<u8>> {
+        let mut buffer = vec![];
+        let writer: &mut dyn Write = &mut buffer;
+        self.magic.write::<E>(writer)?;
+        self.version.write::<E>(writer)?;
+        self.content.write::<E>(writer)?;
+        writer.write_u32::<E>(self.table_count)?;
+        writer.write_u32::<E>(self.chunk_count)?;
+        Ok(buffer)
+    }
+
     /// Read from a given stream.
     pub fn read(reader: &mut dyn Read) -> Result<Self> {
         let mut magic = [0_u8; 8];
@@ -100,16 +112,6 @@ impl Header {
             },
             None => Err(Error::Invalid("Not an HFF file.".into())),
         }
-    }
-
-    /// Write to the given stream.
-    pub fn write<E: ByteOrder>(self, writer: &mut dyn Write) -> Result<()> {
-        self.magic.write::<E>(writer)?;
-        self.version.write::<E>(writer)?;
-        self.content.write::<E>(writer)?;
-        writer.write_u32::<E>(self.table_count)?;
-        writer.write_u32::<E>(self.chunk_count)?;
-        Ok(())
     }
 
     /// A test helper.  Swapping the bytes like this only makes sense for

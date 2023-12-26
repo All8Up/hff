@@ -1,19 +1,19 @@
 //! Implements the basic reader/writer functionality for HFF.
 #![warn(missing_docs)]
-use hff_core::{write::DataSource, Error, Result};
-
-mod writer;
-pub use writer::{chunk, hff, table};
+use hff_core::Result;
 
 mod read;
 pub use read::*;
+
+mod write;
+pub use write::*;
 
 pub mod utilities;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hff_core::{read::Hff, write::HffDesc, Ecc};
+    use hff_core::{read::Hff, write::*, Ecc};
     use std::io::Seek;
 
     fn test_table<'a>() -> Result<HffDesc<'a>> {

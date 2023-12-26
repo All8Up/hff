@@ -3,7 +3,7 @@
 //! # Examples
 //!
 //! ```
-//! use hff::{*, read::Hff};
+//! use hff::{*, read::Hff, write::*};
 //! use hff_std::{*, Chunk};
 //!
 //! // Creating the content can use the builder:
