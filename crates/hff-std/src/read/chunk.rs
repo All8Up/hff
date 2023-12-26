@@ -7,6 +7,9 @@ pub trait Chunk {
     /// Read the chunk data from the table.
     fn read(&self, source: &mut dyn ReadSeek) -> Result<Vec<u8>>;
 
+    /// Read the chunk data into the provided buffer.
+    fn read_exact(&self, source: &mut dyn ReadSeek, buffer: &mut [u8]) -> Result<u64>;
+
     /// Read and decompress a chunk from the table.
     #[cfg(feature = "compression")]
     fn decompress(&self, source: &mut dyn ReadSeek) -> Result<Vec<u8>>;
@@ -22,6 +25,18 @@ impl<'a> Chunk for ChunkView<'a> {
             Ok(buffer)
         } else {
             Ok(vec![])
+        }
+    }
+
+    /// Read the chunk data into the provided buffer.
+    fn read_exact(&self, source: &mut dyn ReadSeek, buffer: &mut [u8]) -> Result<u64> {
+        let chunk = &self.hff().chunks_array()[self.index()];
+        if chunk.length() > 0 {
+            source.seek(SeekFrom::Start(chunk.offset()))?;
+            source.read_exact(buffer)?;
+            Ok(buffer.len() as u64)
+        } else {
+            Ok(0)
         }
     }
 
