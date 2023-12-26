@@ -1,5 +1,8 @@
 use crate::{DataSource, Result};
-use std::io::Write;
+use std::{
+    io::Write,
+    ops::{Deref, DerefMut},
+};
 
 #[derive(Debug)]
 pub struct DataArray<'a> {
@@ -76,5 +79,19 @@ impl<'a> DataArray<'a> {
         }
 
         Ok(offset_len)
+    }
+}
+
+impl<'a> Deref for DataArray<'a> {
+    type Target = [DataSource<'a>];
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
+impl<'a> DerefMut for DataArray<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.data
     }
 }

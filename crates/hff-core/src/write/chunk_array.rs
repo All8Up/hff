@@ -1,10 +1,8 @@
-use crate::Result;
-use hff_core::{ByteOrder, Chunk};
-use std::{
-    io::Write,
-    ops::{Index, IndexMut},
-};
+use crate::{ByteOrder, Chunk, Result};
+use std::ops::{Index, IndexMut};
 
+/// After flattening a table, this is where the chunks will
+/// exist.
 #[derive(Debug)]
 pub struct ChunkArray {
     chunks: Vec<Chunk>,
@@ -26,12 +24,13 @@ impl ChunkArray {
         self.chunks.push(chunk);
     }
 
-    /// Write the tables to the given stream.
-    pub fn write<E: ByteOrder>(self, writer: &mut dyn Write) -> Result<()> {
+    /// Convert the chunk array to a byte vector.
+    pub fn to_bytes<E: ByteOrder>(self) -> Result<Vec<u8>> {
+        let mut buffer = vec![];
         for chunk in self.chunks {
-            chunk.write::<E>(writer)?;
+            chunk.write::<E>(&mut buffer)?;
         }
-        Ok(())
+        Ok(buffer)
     }
 }
 

@@ -1,11 +1,8 @@
 use crate::{DataSource, Error, Result};
-use hff_core::Ecc;
-
-mod table_array;
-pub(crate) use table_array::TableArray;
-
-mod chunk_array;
-pub(crate) use chunk_array::ChunkArray;
+use hff_core::{
+    write::{ChunkArray, TableArray},
+    Ecc,
+};
 
 mod data_array;
 pub(crate) use data_array::DataArray;
@@ -19,8 +16,8 @@ pub(crate) use table_desc::TableDesc;
 mod table_builder;
 pub(crate) use table_builder::TableBuilder;
 
-mod hff_content;
-pub use hff_content::HffContent;
+mod hff_desc;
+pub use hff_desc::HffDesc;
 
 /// Start building a new table.
 pub fn table<'a>(primary: impl Into<Ecc>, secondary: impl Into<Ecc>) -> TableBuilder<'a> {
@@ -46,7 +43,7 @@ where
 }
 
 /// Build the structure of the Hff content.
-pub fn hff<'a>(tables: impl IntoIterator<Item = TableBuilder<'a>>) -> HffContent<'a> {
+pub fn hff<'a>(tables: impl IntoIterator<Item = TableBuilder<'a>>) -> HffDesc<'a> {
     // Split the tables into their components.
     let mut table_array = TableArray::new();
     let mut chunk_array = ChunkArray::new();
@@ -70,13 +67,13 @@ pub fn hff<'a>(tables: impl IntoIterator<Item = TableBuilder<'a>>) -> HffContent
             &mut data_array,
         );
     }
-    HffContent::new(table_array, chunk_array, data_array)
+    HffDesc::new(table_array, chunk_array, data_array)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use hff_core::Hff;
+    use hff_core::read::Hff;
 
     #[test]
     fn test() {

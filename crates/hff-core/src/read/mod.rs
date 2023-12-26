@@ -1,5 +1,5 @@
 //! Higher level wrapping over the structure in order to support
-//! read and write needs.
+//! reading hff files.
 
 mod chunk_view;
 pub use chunk_view::ChunkView;
@@ -18,12 +18,3 @@ pub use chunk_iter::ChunkIter;
 
 mod hff;
 pub use hff::Hff;
-
-mod table_array;
-pub use table_array::TableArray;
-
-mod chunk_array;
-pub use chunk_array::ChunkArray;
-
-mod data_source;
-pub use data_source::DataSource;

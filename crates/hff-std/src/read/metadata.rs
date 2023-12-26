@@ -1,5 +1,5 @@
 use crate::{ReadSeek, Result};
-use hff_core::TableView;
+use hff_core::read::TableView;
 use std::io::SeekFrom;
 
 /// Extension to read metadata from a table.

@@ -1,5 +1,5 @@
 use super::ChunkCache;
-use hff_core::{ByteOrder, Chunk, Header, Hff, Result, Table, NE, OP};
+use hff_core::{read::Hff, ByteOrder, Chunk, Header, Result, Table, NE, OP};
 use std::{io::Read, mem::size_of};
 
 /// An extension to read in Hff files using std::io.

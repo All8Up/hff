@@ -35,15 +35,15 @@ impl<'a> TableDesc<'a> {
         }
     }
 
-    pub(super) fn flatten(
+    /// Flatten the description into separate portions of tables,
+    /// chunks and the data blob.
+    pub fn flatten(
         self,
         has_sibling: bool,
         tables: &mut TableArray,
         chunks: &mut ChunkArray,
         data: &mut DataArray<'a>,
     ) {
-        // Adjust and push this table into the arrays.
-
         // First, record if the table had metadata and push that to the
         // data array if so.
         let had_metadata = if let Some(metadata) = self.metadata {

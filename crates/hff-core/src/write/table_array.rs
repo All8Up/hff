@@ -1,9 +1,5 @@
-use crate::Result;
-use hff_core::{ByteOrder, Table};
-use std::{
-    io::Write,
-    ops::{Index, IndexMut},
-};
+use crate::{ByteOrder, Result, Table};
+use std::ops::{Index, IndexMut};
 
 /// The table array to be written.
 #[derive(Debug)]
@@ -34,12 +30,14 @@ impl TableArray {
         self.tables.last_mut()
     }
 
-    /// Write the tables to the given stream.
-    pub fn write<E: ByteOrder>(self, writer: &mut dyn Write) -> Result<()> {
+    /// Convert the table array to a byte vector for
+    /// writing.
+    pub fn to_bytes<E: ByteOrder>(self) -> Result<Vec<u8>> {
+        let mut buffer = vec![];
         for table in self.tables {
-            table.1.write::<E>(writer)?;
+            table.1.write::<E>(&mut buffer)?;
         }
-        Ok(())
+        Ok(buffer)
     }
 }
 

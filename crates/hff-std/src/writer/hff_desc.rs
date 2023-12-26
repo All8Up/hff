@@ -9,9 +9,9 @@ pub trait WriteSeek: Write + Seek {}
 /// Blanket implementation for anything viable.
 impl<T: Write + Seek> WriteSeek for T {}
 
-/// Content to be written into an hff stream.
+/// Description of hff and content.
 #[derive(Debug)]
-pub struct HffContent<'a> {
+pub struct HffDesc<'a> {
     /// The tables.
     tables: TableArray,
     /// The chunks.
@@ -20,7 +20,7 @@ pub struct HffContent<'a> {
     data: Option<DataArray<'a>>,
 }
 
-impl<'a> HffContent<'a> {
+impl<'a> HffDesc<'a> {
     /// Create a new content instance.
     pub fn new(tables: TableArray, chunks: ChunkArray, data: DataArray<'a>) -> Self {
         Self {
@@ -107,8 +107,8 @@ impl<'a> HffContent<'a> {
         // Update the table metadata length/offset and chunk length/offset.
         self.update_data(self.offset_to_blob() as u64, &offset_len);
 
-        self.tables.write::<E>(writer)?;
-        self.chunks.write::<E>(writer)?;
+        writer.write_all(self.tables.to_bytes::<E>()?.as_slice())?;
+        writer.write_all(self.chunks.to_bytes::<E>()?.as_slice())?;
         let _test = data.write(writer)?;
         assert_eq!(_test, offset_len);
 
@@ -141,8 +141,8 @@ impl<'a> HffContent<'a> {
         writer.seek(std::io::SeekFrom::Start(Header::SIZE as u64))?;
 
         // And write the tables and chunks.
-        self.tables.write::<E>(&mut writer)?;
-        self.chunks.write::<E>(&mut writer)?;
+        writer.write_all(self.tables.to_bytes::<E>()?.as_slice())?;
+        writer.write_all(self.chunks.to_bytes::<E>()?.as_slice())?;
 
         Ok(())
     }

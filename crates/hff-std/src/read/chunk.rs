@@ -1,5 +1,5 @@
 use crate::{ReadSeek, Result};
-use hff_core::ChunkView;
+use hff_core::read::ChunkView;
 use std::io::SeekFrom;
 
 /// Extension to read metadata from a table.

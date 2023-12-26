@@ -16,4 +16,4 @@ xz2 = { version = "0.1.7", optional = true }
 
 [features]
 default = []
-compression = ["dep:xz2"]
+compression = ["dep:xz2", "hff-core/compression"]
