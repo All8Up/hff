@@ -5,7 +5,7 @@ use std::io::SeekFrom;
 /// Extension to read metadata from a table.
 pub trait Chunk {
     /// Read the chunk data from the table.
-    fn data(&self, source: &mut dyn ReadSeek) -> Result<Vec<u8>>;
+    fn read(&self, source: &mut dyn ReadSeek) -> Result<Vec<u8>>;
 
     /// Read and decompress a chunk from the table.
     #[cfg(feature = "compression")]
@@ -13,7 +13,7 @@ pub trait Chunk {
 }
 
 impl<'a> Chunk for ChunkView<'a> {
-    fn data(&self, source: &mut dyn ReadSeek) -> Result<Vec<u8>> {
+    fn read(&self, source: &mut dyn ReadSeek) -> Result<Vec<u8>> {
         let chunk = &self.hff().chunks_array()[self.index()];
         if chunk.length() > 0 {
             source.seek(SeekFrom::Start(chunk.offset()))?;
@@ -28,7 +28,7 @@ impl<'a> Chunk for ChunkView<'a> {
     /// Read and decompress the chunk data.
     #[cfg(feature = "compression")]
     fn decompress(&self, source: &mut dyn ReadSeek) -> Result<Vec<u8>> {
-        let source = self.data(source)?;
+        let source = self.read(source)?;
         if source.len() > 0 {
             let source: &mut dyn std::io::Read = &mut source.as_slice();
             let mut decoder = xz2::read::XzDecoder::new(source);

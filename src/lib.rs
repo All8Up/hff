@@ -53,7 +53,7 @@
 //!
 //!     // Iterate the chunks.
 //!     for chunk in table.chunks() {
-//!         println!("{}", std::str::from_utf8(&chunk.data(&mut cache).unwrap()).unwrap());
+//!         println!("{}", std::str::from_utf8(&chunk.read(&mut cache).unwrap()).unwrap());
 //!     }
 //! }
 //! ```

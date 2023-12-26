@@ -172,7 +172,7 @@ mod tests {
                 } else {
                     assert_eq!(chunk.size(), test_entry.2.len());
                     assert_eq!(
-                        chunk.data(cache).unwrap(),
+                        chunk.read(cache).unwrap(),
                         Vec::from(test_entry.2.as_bytes())
                     );
                 }
@@ -180,7 +180,7 @@ mod tests {
                 {
                     assert_eq!(chunk.size(), test_entry.2.len());
                     assert_eq!(
-                        chunk.data(cache).unwrap(),
+                        chunk.read(cache).unwrap(),
                         Vec::from(test_entry.2.as_bytes())
                     );
                 }
