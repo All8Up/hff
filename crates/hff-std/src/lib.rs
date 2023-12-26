@@ -166,7 +166,7 @@ mod tests {
 
                 #[cfg(feature = "compression")]
                 if chunk.secondary() == Ecc::new("TRS5") {
-                    let decompressed = chunk.decompressed(cache).unwrap();
+                    let decompressed = chunk.decompress(cache).unwrap();
                     assert_eq!(decompressed.len(), test_entry.2.len());
                     assert_eq!(decompressed, Vec::from(test_entry.2.as_bytes()));
                 } else {
