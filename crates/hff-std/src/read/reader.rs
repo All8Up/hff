@@ -1,57 +1,46 @@
-use hff_core::{ByteOrder, Chunk, Header, Result, Table, NE, OP};
+use super::ChunkCache;
+use hff_core::{ByteOrder, Chunk, Header, Hff, Result, Table, NE, OP};
 use std::{io::Read, mem::size_of};
 
-mod read_seek;
-pub use read_seek::ReadSeek;
+/// An extension to read in Hff files using std::io.
+pub trait Reader {
+    /// Read in the Hff.  Only reads the structure of the Hff.
+    fn read(reader: &mut dyn Read) -> Result<Hff>;
 
-mod hff_cache;
-pub use hff_cache::ChunkCache;
-
-mod hff;
-pub use hff::Hff;
-
-mod table_view;
-pub use table_view::TableView;
-
-mod chunk_view;
-pub use chunk_view::ChunkView;
-
-mod chunk_iter;
-pub use chunk_iter::ChunkIter;
-
-mod table_iter;
-pub use table_iter::TableIter;
-
-mod depth_first_iter;
-pub use depth_first_iter::DepthFirstIter;
-
-/// Read a HFF from the given stream.
-pub fn read_stream(reader: &mut dyn Read) -> Result<Hff> {
-    // The header determines the structure endianess.
-    let header = Header::read(reader)?;
-    let (tables, chunks) = if header.is_native_endian() {
-        (
-            read_tables::<NE>(reader, header.table_count())?,
-            read_chunks::<NE>(reader, header.chunk_count())?,
-        )
-    } else {
-        (
-            read_tables::<OP>(reader, header.table_count())?,
-            read_chunks::<OP>(reader, header.chunk_count())?,
-        )
-    };
-
-    Ok(Hff::new(header, tables, chunks))
+    /// Read in the full Hff, structure and chunks.
+    fn read_full(reader: &mut dyn Read) -> Result<(Hff, ChunkCache)>;
 }
 
-/// Read a HFF from the given stream along with all the data for the chunks.
-pub fn read_stream_full(reader: &mut dyn Read) -> Result<(Hff, ChunkCache)> {
-    let hff = read_stream(reader)?;
-    let mut buffer = vec![];
-    reader.read_to_end(&mut buffer)?;
+impl Reader for Hff {
+    fn read(reader: &mut dyn Read) -> Result<Hff> {
+        // The header determines the structure endianess.
+        let header = Header::read(reader)?;
+        let (tables, chunks) = if header.is_native_endian() {
+            (
+                read_tables::<NE>(reader, header.table_count())?,
+                read_chunks::<NE>(reader, header.chunk_count())?,
+            )
+        } else {
+            (
+                read_tables::<OP>(reader, header.table_count())?,
+                read_chunks::<OP>(reader, header.chunk_count())?,
+            )
+        };
 
-    let offset = hff.offset_to_data();
-    Ok((hff, ChunkCache::new(offset, buffer)))
+        Ok(Hff::new(header, tables, chunks))
+    }
+
+    fn read_full(reader: &mut dyn Read) -> Result<(Hff, ChunkCache)> {
+        let hff = Self::read(reader)?;
+
+        let mut buffer = vec![];
+        reader.read_to_end(&mut buffer)?;
+
+        let offset = hff.offset_to_data();
+        let cache = ChunkCache::new(offset, buffer);
+
+        Ok((hff, cache))
+    }
 }
 
 fn read_tables<E: ByteOrder>(reader: &mut dyn Read, count: u32) -> Result<Vec<Table>> {

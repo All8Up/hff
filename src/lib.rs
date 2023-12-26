@@ -4,6 +4,7 @@
 //!
 //! ```
 //! use hff::*;
+//! use hff_std::{*, Chunk};
 //!
 //! // Creating the content can use the builder:
 //! let content = hff([
@@ -37,7 +38,7 @@
 //! // trait.  In this case we also read all the data into a cache in memory.
 //! // The cache is simply an array with Read+Seek implemented on top of a
 //! // Vec<u8>.
-//! let (hff, mut cache) = read_stream_full(&mut buffer.as_slice()).unwrap();
+//! let (hff, mut cache) = Hff::read_full(&mut buffer.as_slice()).unwrap();
 //!
 //! // The Hff instance contains the structure of the content and can be
 //! // iterated in multiple ways.  Here, we'll use the depth first iterator
@@ -90,4 +91,4 @@
 pub use hff_core::*;
 
 #[doc(inline)]
-pub use hff_std::*;
+pub use hff_std;

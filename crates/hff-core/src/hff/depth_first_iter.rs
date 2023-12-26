@@ -1,4 +1,4 @@
-use crate::{Hff, TableView};
+use super::{Hff, TableView};
 
 /// A depth first iterator over hff content.
 pub struct DepthFirstIter<'a> {

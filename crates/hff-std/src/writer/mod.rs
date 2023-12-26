@@ -75,7 +75,8 @@ pub fn hff<'a>(tables: impl IntoIterator<Item = TableBuilder<'a>>) -> HffContent
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::*;
+    use hff_core::Hff;
 
     #[test]
     fn test() {
@@ -106,7 +107,7 @@ mod tests {
         let mut buffer = vec![];
         content.write::<hff_core::LE>("Test", &mut buffer).unwrap();
 
-        let (hff, _cache) = crate::read_stream_full(&mut buffer.as_slice()).unwrap();
+        let (hff, _cache) = Hff::read_full(&mut buffer.as_slice()).unwrap();
         println!("{:#?}", hff);
         println!("-----------------------------");
         for (depth, table) in hff.depth_first() {

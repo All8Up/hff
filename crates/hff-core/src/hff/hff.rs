@@ -1,5 +1,4 @@
-use crate::{DepthFirstIter, TableIter};
-use hff_core::{Chunk, Header, Semver, Table};
+use crate::{Chunk, DepthFirstIter, Header, Semver, Table, TableIter};
 use std::{fmt::Debug, mem::size_of};
 
 /// The Hff structure data.  This is an immutable representation of the
@@ -59,12 +58,12 @@ impl Hff {
     }
 
     /// Get access to the table array.
-    pub(super) fn tables_array(&self) -> &[Table] {
+    pub fn tables_array(&self) -> &[Table] {
         &self.tables
     }
 
     /// Get access to the chunk array.
-    pub(super) fn chunks_array(&self) -> &[Chunk] {
+    pub fn chunks_array(&self) -> &[Chunk] {
         &self.chunks
     }
 }

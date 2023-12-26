@@ -1,6 +1,5 @@
-use crate::{ChunkIter, Hff, ReadSeek, TableIter};
-use hff_core::{Ecc, Result};
-use std::{fmt::Debug, io::SeekFrom};
+use crate::{ChunkIter, Ecc, Hff, TableIter};
+use std::fmt::Debug;
 
 /// View of a table.
 pub struct TableView<'a> {
@@ -24,6 +23,16 @@ impl<'a> TableView<'a> {
     /// Create a new TableView.
     pub(super) fn new(hff: &'a Hff, index: usize) -> Self {
         Self { hff, index }
+    }
+
+    /// Get the hff container we're built from.
+    pub fn hff(&self) -> &Hff {
+        self.hff
+    }
+
+    /// Get the current index into the tables.
+    pub fn index(&self) -> usize {
+        self.index
     }
 
     /// Get the primary identifier.
@@ -59,18 +68,5 @@ impl<'a> TableView<'a> {
     /// Get the count of chunks in the table.
     pub fn chunk_count(&self) -> usize {
         self.hff.tables_array()[self.index].chunk_count() as usize
-    }
-
-    /// Read the metadata from the given source.
-    pub fn metadata(&self, source: &mut dyn ReadSeek) -> Result<Vec<u8>> {
-        let table = &self.hff.tables_array()[self.index];
-        if table.metadata_length() > 0 {
-            source.seek(SeekFrom::Start(table.metadata_offset()))?;
-            let mut buffer = vec![0; table.metadata_length() as usize];
-            source.read_exact(buffer.as_mut_slice())?;
-            Ok(buffer)
-        } else {
-            Ok(vec![])
-        }
     }
 }

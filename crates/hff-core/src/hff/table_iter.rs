@@ -1,4 +1,4 @@
-use crate::{Hff, TableView};
+use super::{Hff, TableView};
 
 /// An iterator over tables at a given level.
 pub struct TableIter<'a> {

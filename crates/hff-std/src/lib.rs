@@ -3,28 +3,21 @@
 use hff_core::{Ecc, Error, Result};
 
 mod writer;
-pub use writer::{chunk, hff, table};
+pub use writer::{chunk, hff, table, HffContent};
 
 mod data_source;
 pub use data_source::DataSource;
 
-mod reader;
-pub use reader::{
-    read_stream, read_stream_full, ChunkCache, ChunkIter, ChunkView, DepthFirstIter, Hff, ReadSeek,
-    TableIter, TableView,
-};
+mod read;
+pub use read::*;
 
 pub mod utilities;
 
 #[cfg(test)]
 mod tests {
-    use std::io::Seek;
-
     use super::*;
-    use crate::{
-        reader::{ChunkCache, Hff},
-        writer::HffContent,
-    };
+    use hff_core::Hff;
+    use std::io::Seek;
 
     fn test_table<'a>() -> Result<HffContent<'a>> {
         Ok(hff([
@@ -225,7 +218,7 @@ mod tests {
 
             // Read it back in and iterate.
             writer.rewind().unwrap();
-            let (hff, mut cache) = read_stream_full(&mut writer).unwrap();
+            let (hff, mut cache) = Hff::read_full(&mut writer).unwrap();
             checks(&hff, &mut cache);
         }
 
@@ -237,7 +230,7 @@ mod tests {
             assert!(content.write::<hff_core::OP>("Test", &mut buffer).is_ok());
 
             // Read it back in and iterate.
-            let (hff, mut cache) = read_stream_full(&mut buffer.as_slice()).unwrap();
+            let (hff, mut cache) = Hff::read_full(&mut buffer.as_slice()).unwrap();
             checks(&hff, &mut cache);
         }
     }

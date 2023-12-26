@@ -31,5 +31,9 @@ pub use table::Table;
 mod chunk;
 pub use chunk::Chunk;
 
+// The read container.
+mod hff;
+pub use hff::{ChunkIter, ChunkView, DepthFirstIter, Hff, TableIter, TableView};
+
 // Re-export byte order.
 pub use byteorder;
