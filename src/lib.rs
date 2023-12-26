@@ -92,3 +92,11 @@ pub use hff_core::*;
 
 #[doc(inline)]
 pub use hff_std;
+
+#[cfg(feature = "async-std-rt")]
+#[doc(inline)]
+pub use hff_async_std;
+
+#[cfg(feature = "tokio-rt")]
+#[doc(inline)]
+pub use hff_tokio;
