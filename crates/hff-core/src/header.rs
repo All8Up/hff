@@ -1,7 +1,7 @@
 //! The file header.
 use super::Semver;
-use crate::{Ecc, Result, NATIVE_ENDIAN};
-use byteorder::{ByteOrder, WriteBytesExt};
+use crate::{Ecc, Endian, Error, Result, BE, LE, NATIVE_ENDIAN, NE};
+use byteorder::{ByteOrder, ReadBytesExt, WriteBytesExt};
 use std::io::Write;
 
 /// The current version of the format.
@@ -69,6 +69,11 @@ impl Header {
         }
     }
 
+    /// Get the magic value.
+    pub fn magic(&self) -> Ecc {
+        self.magic
+    }
+
     /// Get the container version.
     pub fn version(&self) -> Semver {
         self.version
@@ -116,10 +121,43 @@ impl Header {
     }
 }
 
+impl TryFrom<&[u8]> for Header {
+    type Error = crate::Error;
+
+    fn try_from(mut value: &[u8]) -> std::prelude::v1::Result<Self, Self::Error> {
+        let reader: &mut dyn std::io::Read = &mut value;
+
+        // Read the magic in native endian.
+        let magic = Ecc::read::<NE>(reader)?;
+
+        // Check the endianness and read the remaining data appropriately.
+        // NOTE: The magic is stored as whatever form was found so we can
+        // detect the original form at a later time.
+        match Ecc::HFF_MAGIC.endian(magic.clone()) {
+            Some(endian) => match endian {
+                Endian::Little => Ok(Header::with(
+                    magic,
+                    Semver::read::<LE>(reader)?,
+                    Ecc::read::<LE>(reader)?,
+                    reader.read_u32::<LE>()?,
+                    reader.read_u32::<LE>()?,
+                )),
+                Endian::Big => Ok(Header::with(
+                    magic,
+                    Semver::read::<BE>(reader)?,
+                    Ecc::read::<BE>(reader)?,
+                    reader.read_u32::<BE>()?,
+                    reader.read_u32::<BE>()?,
+                )),
+            },
+            None => Err(Error::Invalid("Not an HFF file.".into())),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{NE, OP};
 
     #[test]
     fn test_struct_layout() {
@@ -139,10 +177,11 @@ mod tests {
     #[test]
     fn serialization() {
         {
+            // Create a header, convert to bytes and then recreate from the bytes.
             let header = Header::new("Test".into(), 1, 2);
-            let mut buffer = vec![];
-            assert!(header.write::<NE>(&mut buffer).is_ok());
-            let dup = Header::read(&mut buffer.as_slice()).unwrap();
+            let buffer = header.clone().to_bytes::<LE>().unwrap();
+            let dup: Header = buffer.as_slice().try_into().unwrap();
+
             assert_eq!(dup.magic, Ecc::HFF_MAGIC);
             assert_eq!(dup.version, Semver::new(0, 1, 0));
             assert_eq!(dup.content, Ecc::new("Test"));
@@ -151,10 +190,11 @@ mod tests {
         }
 
         {
+            // Create a header, convert to bytes and then recreate from the bytes.
             let header = Header::new("Test".into(), 1, 2);
-            let mut buffer = vec![];
-            assert!(header.write::<OP>(&mut buffer).is_ok());
-            let dup = Header::read(&mut buffer.as_slice()).unwrap();
+            let buffer = header.clone().to_bytes::<BE>().unwrap();
+            let dup: Header = buffer.as_slice().try_into().unwrap();
+
             assert_eq!(dup.magic, Ecc::HFF_MAGIC.swap_bytes());
             assert_eq!(dup.version, Semver::new(0, 1, 0));
             assert_eq!(dup.content, Ecc::new("Test"));

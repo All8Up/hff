@@ -9,5 +9,8 @@ repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 
 [dependencies]
-hff-std = { path = "./../hff-std", version = "0.3.1" }
 hff-core = { path = "./../hff-core", version = "0.3.1" }
+
+# Support for tokio.
+# TODO: Minimize the features of tokio for just this crate's needs.
+tokio = { version = "1.35.0", features = ["full"] }

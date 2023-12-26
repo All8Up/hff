@@ -17,16 +17,13 @@ thiserror = "1.0.51"
 hff-std = { path = "./crates/hff-std", version = "0.3.6" }
 
 # Support for async-std.
-async-std = { version = "1.12.0", optional = true }
 hff-async-std = { path = "./crates/hff-async-std", version = "0.3.1", optional = true }
 
 # Support for tokio.
-# TODO: Minimize the features of tokio for just this crate's needs.
-tokio = { version = "1.35.0", features = ["full"], optional = true }
 hff-tokio = { path = "./crates/hff-tokio", version = "0.3.1", optional = true }
 
 [features]
 default = []
-async-std-rt = ["dep:async-std"]
-tokio-rt = ["dep:tokio"]
+async-std-rt = ["dep:hff-async-std"]
+tokio-rt = ["dep:hff-tokio"]
 compression = ["hff-std/compression"]

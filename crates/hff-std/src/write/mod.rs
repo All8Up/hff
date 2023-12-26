@@ -11,7 +11,7 @@ pub trait WriteSeek: Write + Seek {}
 impl<T: Write + Seek> WriteSeek for T {}
 
 /// Writer trait for HffDesc.
-pub trait StdWriter {
+pub trait Writer {
     /// Write to a stream.
     fn write<E: ByteOrder>(
         self,
@@ -28,7 +28,7 @@ pub trait StdWriter {
     ) -> Result<()>;
 }
 
-impl<'a> StdWriter for HffDesc<'a> {
+impl<'a> Writer for HffDesc<'a> {
     fn write<E: ByteOrder>(
         self,
         content_type: impl Into<Ecc>,
