@@ -1,8 +1,8 @@
 //! The file header.
 use super::Semver;
-use crate::{Ecc, Endian, Error, Result, NATIVE_ENDIAN};
-use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
-use std::io::{Read, Write};
+use crate::{Ecc, Result, NATIVE_ENDIAN};
+use byteorder::{ByteOrder, WriteBytesExt};
+use std::io::Write;
 
 /// The current version of the format.
 pub const FORMAT_VERSION: Semver = Semver::new(0, 1, 0);
@@ -32,6 +32,23 @@ impl Header {
         Self {
             magic: Ecc::HFF_MAGIC,
             version: FORMAT_VERSION,
+            content,
+            table_count,
+            chunk_count,
+        }
+    }
+
+    /// Create a new instance with the given data.
+    pub fn with(
+        magic: Ecc,
+        version: Semver,
+        content: Ecc,
+        table_count: u32,
+        chunk_count: u32,
+    ) -> Self {
+        Self {
+            magic,
+            version,
             content,
             table_count,
             chunk_count,
@@ -82,36 +99,6 @@ impl Header {
         writer.write_u32::<E>(self.table_count)?;
         writer.write_u32::<E>(self.chunk_count)?;
         Ok(buffer)
-    }
-
-    /// Read from a given stream.
-    pub fn read(reader: &mut dyn Read) -> Result<Self> {
-        let mut magic = [0_u8; 8];
-        reader.read_exact(&mut magic)?;
-
-        // Detect the file content endianess.  NOTE: This only describes
-        // the file structure itself, the chunk content is "not" considered
-        // part of this.  It is up to the user to deal with endianess of
-        // the chunks.
-        match Ecc::HFF_MAGIC.endian(magic.into()) {
-            Some(endian) => match endian {
-                Endian::Little => Ok(Self {
-                    magic: magic.into(),
-                    version: Semver::read::<LittleEndian>(reader)?,
-                    content: Ecc::read::<LittleEndian>(reader)?,
-                    table_count: reader.read_u32::<LittleEndian>()?,
-                    chunk_count: reader.read_u32::<LittleEndian>()?,
-                }),
-                Endian::Big => Ok(Self {
-                    magic: magic.into(),
-                    version: Semver::read::<BigEndian>(reader)?,
-                    content: Ecc::read::<BigEndian>(reader)?,
-                    table_count: reader.read_u32::<BigEndian>()?,
-                    chunk_count: reader.read_u32::<BigEndian>()?,
-                }),
-            },
-            None => Err(Error::Invalid("Not an HFF file.".into())),
-        }
     }
 
     /// A test helper.  Swapping the bytes like this only makes sense for

@@ -1,4 +1,7 @@
-use hff_core::{write::HffDesc, ByteOrder, Ecc, Header, Result};
+use hff_core::{
+    write::{DataArray, DataSource, HffDesc},
+    ByteOrder, Ecc, Header, Result,
+};
 use std::io::{Seek, Write};
 
 /// Helper trait for lazy writing.
@@ -50,7 +53,7 @@ impl<'a> StdWriter for HffDesc<'a> {
         // And write the content+data blob.
         writer.write_all(tables.to_bytes::<E>()?.as_slice())?;
         writer.write_all(chunks.to_bytes::<E>()?.as_slice())?;
-        let _test = data.write(writer)?;
+        let _test = write_data_array(data, writer)?;
         assert_eq!(_test, offset_len);
 
         Ok(())
@@ -78,7 +81,7 @@ impl<'a> StdWriter for HffDesc<'a> {
         writer.write_all(&mut vec![0; array_size])?;
 
         // Write the data and record the offset/length information.
-        let offset_len = data.write(&mut writer)?;
+        let offset_len = write_data_array(data, &mut writer)?;
 
         // Update the table metadata length/offset and chunk length/offset.
         HffDesc::update_data(&mut tables, &mut chunks, offset_to_blob, &offset_len);
@@ -94,39 +97,47 @@ impl<'a> StdWriter for HffDesc<'a> {
     }
 }
 
-/*
+/// Write the data to the given stream.
+/// Returns a vector of offset into the writer (starting from 0)
+/// and the length of the data written without alignment padding.
+fn write_data_array(data_array: DataArray, writer: &mut dyn Write) -> Result<Vec<(u64, u64)>> {
+    let mut offset_len = vec![];
 
-/// Write the content to the given stream.  This requires seek because we
-/// update the table and chunk entries 'after' writing the data blob and as
-/// such, we have to go back and write them.
-pub fn lazy_write<E: ByteOrder>(
-    mut self,
-    content_type: impl Into<Ecc>,
-    mut writer: &mut dyn WriteSeek,
-) -> Result<()> {
-    self.write_header::<E>(content_type.into(), &mut writer)?;
+    // Track where we are in the writer, starting from zero.
+    let mut offset = 0;
+    for mut item in data_array {
+        // Prepare each item.
+        // This is only for compressed data (at this time) to perform
+        // the compression.  Using std write here means it all has to
+        // be buffered into memory.
+        item.prepare()?;
 
-    // Write zero's for the table and chunk array.
-    // Use this rather than skipping in order to avoid any questionable
-    // differences between different backing types.
-    writer.write_all(&mut vec![0; self.arrays_size()])?;
+        // Write in the appropriate manner.
+        let length = match item {
+            DataSource::File(mut f, _) => std::io::copy(&mut f, writer)?,
+            DataSource::Owned(data) => std::io::copy(&mut data.as_slice(), writer)?,
+            DataSource::Ref(mut data) => std::io::copy(&mut data, writer)?,
+            #[cfg(feature = "compression")]
+            DataSource::Compressed(_, _, data) => {
+                std::io::copy(&mut data.unwrap().as_slice(), writer)?
+            }
+        };
 
-    // Write the data and record the offset/length information.
-    let data = self.data.take().unwrap();
-    let offset_len = data.write(&mut writer)?;
+        // Record the offset and length.
+        offset_len.push((offset as u64, length));
 
-    // Update the table metadata length/offset and chunk length/offset.
-    self.update_data(self.offset_to_blob() as u64, &offset_len);
+        // What is the padding requirement?
+        let padding = (length.next_multiple_of(16) - length) as usize;
+        // Track where we are in the output stream.
+        offset += length as usize + padding;
 
-    // Seek back to the tables/chunks.
-    writer.seek(std::io::SeekFrom::Start(Header::SIZE as u64))?;
+        // Write the padding.
+        let padding = vec![0; padding];
+        writer.write_all(&padding)?;
+    }
 
-    // And write the tables and chunks.
-    writer.write_all(self.tables.to_bytes::<E>()?.as_slice())?;
-    writer.write_all(self.chunks.to_bytes::<E>()?.as_slice())?;
-
-    Ok(())
-} */
+    Ok(offset_len)
+}
 
 #[cfg(test)]
 mod tests {

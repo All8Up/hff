@@ -1,5 +1,8 @@
 use super::ChunkCache;
-use hff_core::{read::Hff, ByteOrder, Chunk, Header, Result, Table, NE, OP};
+use hff_core::{
+    byteorder::ReadBytesExt, read::Hff, ByteOrder, Chunk, Ecc, Endian, Error, Header, Result,
+    Semver, Table, BE, LE, NE, OP,
+};
 use std::{io::Read, mem::size_of};
 
 /// An extension to read in Hff files using std::io.
@@ -14,7 +17,7 @@ pub trait Reader {
 impl Reader for Hff {
     fn read(reader: &mut dyn Read) -> Result<Hff> {
         // The header determines the structure endianess.
-        let header = Header::read(reader)?;
+        let header = read_header(reader)?;
         let (tables, chunks) = if header.is_native_endian() {
             (
                 read_tables::<NE>(reader, header.table_count())?,
@@ -40,6 +43,36 @@ impl Reader for Hff {
         let cache = ChunkCache::new(offset, buffer);
 
         Ok((hff, cache))
+    }
+}
+
+/// Read the header from a given stream.
+fn read_header(reader: &mut dyn Read) -> Result<Header> {
+    let mut magic = [0_u8; 8];
+    reader.read_exact(&mut magic)?;
+
+    // Detect the file content endianess.  NOTE: This only describes
+    // the file structure itself, the chunk content is "not" considered
+    // part of this.  It is up to the user to deal with endianess of
+    // the chunks.
+    match Ecc::HFF_MAGIC.endian(magic.into()) {
+        Some(endian) => match endian {
+            Endian::Little => Ok(Header::with(
+                magic.into(),
+                Semver::read::<LE>(reader)?,
+                Ecc::read::<LE>(reader)?,
+                reader.read_u32::<LE>()?,
+                reader.read_u32::<LE>()?,
+            )),
+            Endian::Big => Ok(Header::with(
+                magic.into(),
+                Semver::read::<BE>(reader)?,
+                Ecc::read::<BE>(reader)?,
+                reader.read_u32::<BE>()?,
+                reader.read_u32::<BE>()?,
+            )),
+        },
+        None => Err(Error::Invalid("Not an HFF file.".into())),
     }
 }
 
