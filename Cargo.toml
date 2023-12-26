@@ -17,10 +17,10 @@ thiserror = "1.0.51"
 hff-std = { path = "./crates/hff-std", version = "0.3.6" }
 
 # Support for async-std.
-hff-async-std = { path = "./crates/hff-async-std", version = "0.3.1", optional = true }
+hff-async-std = { path = "./crates/hff-async-std", version = "0.3.2", optional = true }
 
 # Support for tokio.
-hff-tokio = { path = "./crates/hff-tokio", version = "0.3.1", optional = true }
+hff-tokio = { path = "./crates/hff-tokio", version = "0.3.2", optional = true }
 
 [features]
 default = []

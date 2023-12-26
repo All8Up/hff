@@ -79,9 +79,11 @@
 //! chunks do not have to be stored in memory prior to writing.
 //! - [ ] Remove the development testing and write better and more complete tests.
 //! - [ ] Better examples.
-//! - [ ] Async-std implementation of the reader.
+//! - [-] Async-std implementation of the reader.
+//! pretty horrible but functional implementation.
 //! - [ ] Async-std implementation of the writer.
-//! - [ ] Tokio implementation of the reader.
+//! - [-] Tokio implementation of the reader.
+//! pretty horrible but functional implementation.
 //! - [ ] Tokio implementation of the writer.
 //! - [ ] Mmap, io_ring and whatever other variations make sense in the long run.
 #![warn(missing_docs)]

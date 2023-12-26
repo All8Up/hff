@@ -1,21 +1,23 @@
 use super::ChunkCache;
-use async_std::io::prelude::*;
 use hff_core::{read::Hff, ByteOrder, Chunk, Header, Result, Table, NE, OP};
 use std::mem::size_of;
+use tokio::io::{AsyncRead, AsyncReadExt};
 
 /// An extension to read in Hff files using std::io.
 #[async_trait::async_trait]
 pub trait Reader {
     /// Read in the Hff.  Only reads the structure of the Hff.
-    async fn read<T: Read + Unpin + Sync + Send>(reader: &mut T) -> Result<Hff>;
+    async fn read<T: AsyncRead + Unpin + Sync + Send>(reader: &mut T) -> Result<Hff>;
 
     /// Read in the full Hff, structure and chunks.
-    async fn read_full<T: Read + Unpin + Sync + Send>(reader: &mut T) -> Result<(Hff, ChunkCache)>;
+    async fn read_full<T: AsyncRead + Unpin + Sync + Send>(
+        reader: &mut T,
+    ) -> Result<(Hff, ChunkCache)>;
 }
 
 #[async_trait::async_trait]
 impl Reader for Hff {
-    async fn read<T: Read + Unpin + Sync + Send>(reader: &mut T) -> Result<Hff> {
+    async fn read<T: AsyncRead + Unpin + Sync + Send>(reader: &mut T) -> Result<Hff> {
         // The header determines the structure endianess.
         let header = read_header(reader).await?;
         let (tables, chunks) = if header.is_native_endian() {
@@ -33,7 +35,9 @@ impl Reader for Hff {
         Ok(Hff::new(header, tables, chunks))
     }
 
-    async fn read_full<T: Read + Unpin + Sync + Send>(reader: &mut T) -> Result<(Hff, ChunkCache)> {
+    async fn read_full<T: AsyncRead + Unpin + Sync + Send>(
+        reader: &mut T,
+    ) -> Result<(Hff, ChunkCache)> {
         let hff = Self::read(reader).await?;
 
         let mut buffer = vec![];
@@ -47,7 +51,7 @@ impl Reader for Hff {
 }
 
 /// Read the header from a given stream.
-async fn read_header<T: Read + Unpin + Sync + Send>(reader: &mut T) -> Result<Header> {
+async fn read_header<T: AsyncRead + Unpin + Sync + Send>(reader: &mut T) -> Result<Header> {
     // Read the entire header worth of data.
     let mut header = vec![0; Header::SIZE];
     reader.read_exact(&mut header).await?;
@@ -56,7 +60,7 @@ async fn read_header<T: Read + Unpin + Sync + Send>(reader: &mut T) -> Result<He
     Ok((header.as_slice()).try_into()?)
 }
 
-async fn read_tables<E: ByteOrder, T: Read + Unpin + Sync + Send>(
+async fn read_tables<E: ByteOrder, T: AsyncRead + Unpin + Sync + Send>(
     reader: &mut T,
     count: u32,
 ) -> Result<Vec<Table>> {
@@ -80,7 +84,7 @@ async fn read_tables<E: ByteOrder, T: Read + Unpin + Sync + Send>(
     }
 }
 
-async fn read_chunks<E: ByteOrder, T: Read + Unpin + Sync + Send>(
+async fn read_chunks<E: ByteOrder, T: AsyncRead + Unpin + Sync + Send>(
     reader: &mut T,
     count: u32,
 ) -> Result<Vec<Chunk>> {

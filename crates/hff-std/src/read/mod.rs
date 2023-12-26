@@ -1,5 +1,4 @@
-mod chunk_cache;
-pub use chunk_cache::ChunkCache;
+pub use hff_core::ChunkCache;
 
 mod reader;
 pub use reader::Reader;

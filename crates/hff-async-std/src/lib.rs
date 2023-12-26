@@ -5,7 +5,6 @@ pub use read::*;
 mod tests {
     use super::*;
     use hff_core::{read::Hff, write::*, Ecc, Result};
-    use hff_std::{Chunk, Metadata};
 
     #[async_std::test]
     async fn tests() -> Result<()> {
@@ -38,8 +37,13 @@ mod tests {
         use hff_std::Writer;
         content.write::<hff_core::NE>("Test", &mut buffer)?;
 
-        // Use async_std to read from the buffer.
-        let (hff, mut cache) = Hff::read_full(&mut buffer.as_slice()).await?;
+        // Read the structure of the content.
+        let hff = Hff::read(&mut buffer.as_slice()).await?;
+
+        // The reader must take ownership of the given item in order to
+        // properly function.
+        use async_std::io::Cursor;
+        let mut reader = ChunkReader::new(Box::new(Cursor::new(buffer.into_boxed_slice())));
 
         for (depth, table) in hff.depth_first() {
             // Print information about the table.
@@ -47,14 +51,14 @@ mod tests {
                 "{}: {:?} ({})",
                 depth,
                 table.primary(),
-                std::str::from_utf8(&table.metadata(&mut cache).unwrap_or(vec![])).unwrap()
+                std::str::from_utf8(&table.metadata(&mut reader).await?).unwrap()
             );
 
             // Iterate the chunks.
             for chunk in table.chunks() {
                 println!(
                     "{}",
-                    std::str::from_utf8(&chunk.read(&mut cache).unwrap()).unwrap()
+                    std::str::from_utf8(&chunk.read(&mut reader).await?).unwrap()
                 );
             }
         }

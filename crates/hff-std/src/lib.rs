@@ -11,6 +11,8 @@ pub use write::*;
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "compression")]
+    use hff_core::read::ChunkView;
     use hff_core::{read::Hff, write::*, Ecc};
     use std::io::Seek;
 
@@ -161,7 +163,8 @@ mod tests {
 
                 #[cfg(feature = "compression")]
                 if chunk.secondary() == Ecc::new("TRS5") {
-                    let decompressed = chunk.decompress(cache).unwrap();
+                    let decompressed =
+                        ChunkView::decompress(chunk.read(cache).unwrap().as_slice()).unwrap();
                     assert_eq!(decompressed.len(), test_entry.2.len());
                     assert_eq!(decompressed, Vec::from(test_entry.2.as_bytes()));
                 } else {

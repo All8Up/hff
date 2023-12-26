@@ -31,6 +31,10 @@ pub use table::Table;
 mod chunk;
 pub use chunk::Chunk;
 
+// Helper for full file reading.
+mod chunk_cache;
+pub use chunk_cache::ChunkCache;
+
 // Read support.
 pub mod read;
 

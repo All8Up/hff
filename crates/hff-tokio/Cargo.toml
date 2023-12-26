@@ -1,6 +1,6 @@
 [package]
 name = "hff-tokio"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 authors = ["All8Up <all8up@gmail.com>"]
 license-file = "LICENSE"
@@ -9,7 +9,9 @@ repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 
 [dependencies]
-hff-core = { path = "./../hff-core", version = "0.3.1" }
+hff-core = { path = "./../hff-core", version = "0.3.3" }
+hff-std = { path = "./../hff-std", version = "0.3.6" }
+async-trait = { version = "0.1.75" }
 
 # Support for tokio.
 # TODO: Minimize the features of tokio for just this crate's needs.

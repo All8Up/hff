@@ -1,3 +1,5 @@
+#[cfg(feature = "compression")]
+use crate::Result;
 use crate::{read::Hff, Ecc};
 
 /// A view to a chunk.
@@ -35,5 +37,18 @@ impl<'a> ChunkView<'a> {
     /// Get the size of the data in the chunk.
     pub fn size(&self) -> usize {
         self.hff.chunks_array()[self.index].length() as usize
+    }
+
+    /// Decompress the provided data.
+    #[cfg(feature = "compression")]
+    pub fn decompress(source: &[u8]) -> Result<Vec<u8>> {
+        if source.len() > 0 {
+            let mut decoder = xz2::read::XzDecoder::new(source);
+            let mut result = vec![];
+            std::io::copy(&mut decoder, &mut result)?;
+            Ok(result)
+        } else {
+            Ok(vec![])
+        }
     }
 }
