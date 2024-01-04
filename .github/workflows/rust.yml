@@ -16,11 +16,43 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+  
     - name: Build (Debug)
       run: cargo build --verbose
     - name: Run tests (Debug)
       run: cargo test --verbose
+
     - name: Build (Release)
       run: cargo build --verbose --release
     - name: Run tests (Release)
       run: cargo test --verbose --release
+
+    - name: Build (Debug-AsyncStd)
+      run: cargo build --verbose --features async-std-rt
+    - name: Test (Debug-AsyncStd)
+      run: cargo test --verbose --features async-std-rt
+
+    - name: Build (Release-AsyncStd)
+      run: cargo build --verbose --release --features async-std-rt
+    - name: Test (Release-AsyncStd)
+      run: cargo test --verbose --release --features async-std-rt
+
+    - name: Build (Debug-Tokio)
+      run: cargo build --verbose --features tokio-rt
+    - name: Test (Debug-AsyncStd)
+      run: cargo test --verbose --features tokio-rt
+
+    - name: Build (Release-Tokio)
+      run: cargo build --verbose --release --features tokio-rt
+    - name: Test (Debug-AsyncStd)
+      run: cargo test --verbose --release --features tokio-rt
+
+    - name: Build (Debug-All)
+      run: cargo build --verbose --all-features
+    - name: Test (Debug-AsyncStd)
+      run: cargo test --verbose --all-features
+
+    - name: Build (Release-All)
+      run: cargo build --verbose --release --all-features
+    - name: Test (Debug-AsyncStd)
+      run: cargo test --verbose --release --all-features
