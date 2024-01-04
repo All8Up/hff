@@ -1,14 +1,9 @@
+use crate::WriteSeek;
 use hff_core::{
     write::{DataArray, DataSource, HffDesc},
     ByteOrder, Ecc, Header, Result,
 };
-use std::io::{Seek, Write};
-
-/// Helper trait for lazy writing.
-pub trait WriteSeek: Write + Seek {}
-
-/// Blanket implementation for anything viable.
-impl<T: Write + Seek> WriteSeek for T {}
+use std::io::Write;
 
 /// Writer trait for HffDesc.
 pub trait Writer {
@@ -142,10 +137,7 @@ fn write_data_array(data_array: DataArray, writer: &mut dyn Write) -> Result<Vec
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use hff_core::{
-        read::Hff,
-        write::{chunk, hff, table},
-    };
+    use hff_core::write::{chunk, hff, table};
 
     #[test]
     fn test() {
@@ -176,7 +168,7 @@ mod tests {
         let mut buffer = vec![];
         content.write::<hff_core::LE>("Test", &mut buffer).unwrap();
 
-        let (hff, _cache) = Hff::read_full(&mut buffer.as_slice()).unwrap();
+        let hff = crate::read::inspect(&mut buffer.as_slice()).unwrap();
         println!("{:#?}", hff);
         println!("-----------------------------");
         for (depth, table) in hff.depth_first() {

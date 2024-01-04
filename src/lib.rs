@@ -3,8 +3,7 @@
 //! # Examples
 //!
 //! ```
-//! use hff::{*, read::Hff, write::*};
-//! use hff_std::{*, Chunk};
+//! use hff_std::*;
 //!
 //! // Creating the content can use the builder:
 //! let content = hff([
@@ -38,22 +37,23 @@
 //! // trait.  In this case we also read all the data into a cache in memory.
 //! // The cache is simply an array with Read+Seek implemented on top of a
 //! // Vec<u8>.
-//! let (hff, mut cache) = Hff::read_full(&mut buffer.as_slice()).unwrap();
+//! let hff = read(&mut buffer.as_slice()).unwrap();
 //!
 //! // The Hff instance contains the structure of the content and can be
 //! // iterated in multiple ways.  Here, we'll use the depth first iterator
 //! // just to see all the content.
 //! for (depth, table) in hff.depth_first() {
 //!     // Print information about the table.
+//!     let metadata = hff.read(&table).unwrap_or(&[0; 0]);
 //!     println!("{}: {:?} ({})",
 //!         depth,
 //!         table.primary(),
-//!         std::str::from_utf8(&table.metadata(&mut cache).unwrap_or(vec![])).unwrap()
+//!         std::str::from_utf8(metadata).unwrap()
 //!     );
 //!
 //!     // Iterate the chunks.
 //!     for chunk in table.chunks() {
-//!         println!("{}", std::str::from_utf8(&chunk.read(&mut cache).unwrap()).unwrap());
+//!         println!("{}", std::str::from_utf8(hff.read(&chunk).unwrap()).unwrap());
 //!     }
 //! }
 //! ```
@@ -63,11 +63,7 @@
 //! - [x] More metadata/chunk data source types.  Most things which can be turned into
 //! Vec<u8> exist now, read trait for anything which can be immediately pulled in at
 //! runtime and finally std::path::{Path, PathBuf} to pull data from a file.
-//! - [x] Yet more metadata/chunk data source types.  Specifically serde and compressed.
-//! NOTE: Direct serde support doesn't make sense really.  The user has to choose the
-//! serialization format and the various crates have different ways to serialize to/from
-//! the representation.  So, just leave it to the user to call serialize(&thing)?.as_bytes()
-//! and the reverse.
+//! - [x] Yet more metadata/chunk data source types.
 //! Compression is done and uses lzma due to the desired performance versus compression.
 //! Pass in a tuple with: (level, any valid data source) where level is 0-9.
 //! - [x] Utility types for metadata.  For instance a simple key=value string map and a
@@ -79,11 +75,9 @@
 //! chunks do not have to be stored in memory prior to writing.
 //! - [ ] Remove the development testing and write better and more complete tests.
 //! - [ ] Better examples.
-//! - [-] Async-std implementation of the reader.
-//! pretty horrible but functional implementation.
+//! - [x] Async-std implementation of the reader.
 //! - [ ] Async-std implementation of the writer.
-//! - [-] Tokio implementation of the reader.
-//! pretty horrible but functional implementation.
+//! - [x] Tokio implementation of the reader.
 //! - [ ] Tokio implementation of the writer.
 //! - [ ] Mmap, io_ring and whatever other variations make sense in the long run.
 #![warn(missing_docs)]

@@ -1,49 +1,65 @@
-use super::ChunkCache;
+use crate::{ReadSeek, StdReader};
 use hff_core::{
-    byteorder::ReadBytesExt, read::Hff, ByteOrder, Chunk, Ecc, Endian, Error, Header, Result,
-    Semver, Table, BE, LE, NE, OP,
+    byteorder::ReadBytesExt,
+    read::{Hff, Inspection},
+    ByteOrder, Chunk, ChunkCache, Ecc, Endian, Error, Header, Result, Semver, Table, BE, LE, NE,
+    OP,
 };
 use std::{io::Read, mem::size_of};
 
-/// An extension to read in Hff files using std::io.
-pub trait Reader {
-    /// Read in the Hff.  Only reads the structure of the Hff.
-    fn read(reader: &mut dyn Read) -> Result<Hff>;
-
-    /// Read in the full Hff, structure and chunks.
-    fn read_full(reader: &mut dyn Read) -> Result<(Hff, ChunkCache)>;
+/// Opens the input and maintains it for random access to the
+/// metadata and chunks.
+pub fn open(mut source: impl ReadSeek + 'static) -> Result<Hff<StdReader>> {
+    let (header, tables, chunks) = read_hff(&mut source)?;
+    Ok(Hff::new(StdReader::new(source), header, tables, chunks))
 }
 
-impl Reader for Hff {
-    fn read(reader: &mut dyn Read) -> Result<Hff> {
-        // The header determines the structure endianess.
-        let header = read_header(reader)?;
-        let (tables, chunks) = if header.is_native_endian() {
-            (
-                read_tables::<NE>(reader, header.table_count())?,
-                read_chunks::<NE>(reader, header.chunk_count())?,
-            )
-        } else {
-            (
-                read_tables::<OP>(reader, header.table_count())?,
-                read_chunks::<OP>(reader, header.chunk_count())?,
-            )
-        };
+/// Reads an entire Hff into memory.
+pub fn read(source: &mut dyn Read) -> Result<Hff<ChunkCache>> {
+    let (header, tables, chunks, cache) = read_hff_full(source)?;
+    Ok(Hff::new(cache, header, tables, chunks))
+}
 
-        Ok(Hff::new(header, tables, chunks))
-    }
+/// Read the structure of a Hff into memory.  Provides access
+/// only to the structure without any of the metadata or chunk
+/// data available.
+pub fn inspect(source: &mut dyn Read) -> Result<Hff<Inspection>> {
+    let (header, tables, chunks) = read_hff(source)?;
+    Ok(Hff::new(Inspection, header, tables, chunks))
+}
 
-    fn read_full(reader: &mut dyn Read) -> Result<(Hff, ChunkCache)> {
-        let hff = Self::read(reader)?;
+// Helpers to read hff from std::io::Read traits.
 
-        let mut buffer = vec![];
-        reader.read_to_end(&mut buffer)?;
+pub(super) fn read_hff(reader: &mut dyn Read) -> Result<(Header, Vec<Table>, Vec<Chunk>)> {
+    // The header determines the structure endianess.
+    let header = read_header(reader)?;
+    let (tables, chunks) = if header.is_native_endian() {
+        (
+            read_tables::<NE>(reader, header.table_count())?,
+            read_chunks::<NE>(reader, header.chunk_count())?,
+        )
+    } else {
+        (
+            read_tables::<OP>(reader, header.table_count())?,
+            read_chunks::<OP>(reader, header.chunk_count())?,
+        )
+    };
 
-        let offset = hff.offset_to_data();
-        let cache = ChunkCache::new(offset, buffer);
+    Ok((header, tables, chunks))
+}
 
-        Ok((hff, cache))
-    }
+fn read_hff_full(reader: &mut dyn Read) -> Result<(Header, Vec<Table>, Vec<Chunk>, ChunkCache)> {
+    let (header, tables, chunks) = read_hff(reader)?;
+
+    let mut buffer = vec![];
+    reader.read_to_end(&mut buffer)?;
+
+    let offset = size_of::<Header>()
+        + (size_of::<Table>() * tables.len())
+        + (size_of::<Chunk>() * chunks.len());
+    let cache = ChunkCache::new(offset, buffer);
+
+    Ok((header, tables, chunks, cache))
 }
 
 /// Read the header from a given stream.

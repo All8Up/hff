@@ -1,21 +1,28 @@
-#[cfg(feature = "compression")]
-use crate::Result;
-use crate::{read::Hff, Ecc};
+use super::Hff;
+use crate::{ContentInfo, Ecc};
+use std::fmt::Debug;
 
 /// A view to a chunk.
-pub struct ChunkView<'a> {
-    hff: &'a Hff,
+#[derive(Copy, Clone)]
+pub struct ChunkView<'a, T: Debug> {
+    hff: &'a Hff<T>,
     index: usize,
 }
 
-impl<'a> ChunkView<'a> {
+impl<'a, T: Debug> Debug for ChunkView<'a, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.hff.chunks_array()[self.index])
+    }
+}
+
+impl<'a, T: Debug> ChunkView<'a, T> {
     /// Create a new view.
-    pub fn new(hff: &'a Hff, index: usize) -> Self {
+    pub fn new(hff: &'a Hff<T>, index: usize) -> Self {
         Self { hff, index }
     }
 
     /// Get the hff this was built from.
-    pub fn hff(&self) -> &Hff {
+    pub fn hff(&self) -> &Hff<T> {
         self.hff
     }
 
@@ -38,17 +45,14 @@ impl<'a> ChunkView<'a> {
     pub fn size(&self) -> usize {
         self.hff.chunks_array()[self.index].length() as usize
     }
+}
 
-    /// Decompress the provided data.
-    #[cfg(feature = "compression")]
-    pub fn decompress(source: &[u8]) -> Result<Vec<u8>> {
-        if source.len() > 0 {
-            let mut decoder = xz2::read::XzDecoder::new(source);
-            let mut result = vec![];
-            std::io::copy(&mut decoder, &mut result)?;
-            Ok(result)
-        } else {
-            Ok(vec![])
-        }
+impl<'a, T: Debug> ContentInfo for ChunkView<'a, T> {
+    fn len(&self) -> u64 {
+        self.hff.chunks_array()[self.index].length()
+    }
+
+    fn offset(&self) -> u64 {
+        self.hff.chunks_array()[self.index].offset()
     }
 }

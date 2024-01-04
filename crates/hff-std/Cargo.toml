@@ -1,6 +1,6 @@
 [package]
 name = "hff-std"
-version = "0.3.6"
+version = "0.3.7"
 edition = "2021"
 authors = ["All8Up <all8up@gmail.com>"]
 license-file = "LICENSE"

@@ -1,11 +1,19 @@
+// Reexport needed types.
+#[cfg(feature = "compression")]
+pub use hff_core::read::decompress;
+
+pub use hff_core::{
+    read::{ChunkView, Hff, TableView},
+    write::{chunk, hff, table, HffDesc},
+    ChunkCache, Ecc, Result, NE, OP,
+};
+
 mod read;
 pub use read::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hff_core::{read::Hff, write::*, Ecc, Result};
-    use hff_std::{Chunk, Metadata};
 
     #[tokio::test]
     async fn tests() -> Result<()> {
@@ -38,8 +46,13 @@ mod tests {
         use hff_std::Writer;
         content.write::<hff_core::NE>("Test", &mut buffer)?;
 
-        // Use async_std to read from the buffer.
-        let (hff, mut cache) = Hff::read_full(&mut buffer.as_slice()).await?;
+        // The reader must take ownership of the given item in order to
+        // properly function.
+        use std::io::Cursor;
+        let reader: Box<dyn ReadSeek> = Box::new(Cursor::new(buffer.into_boxed_slice()));
+
+        // Open the buffer as an hff.
+        let hff = open(reader).await?;
 
         for (depth, table) in hff.depth_first() {
             // Print information about the table.
@@ -47,14 +60,14 @@ mod tests {
                 "{}: {:?} ({})",
                 depth,
                 table.primary(),
-                std::str::from_utf8(&table.metadata(&mut cache).unwrap_or(vec![])).unwrap()
+                std::str::from_utf8(hff.read(&table).await?.as_slice()).unwrap()
             );
 
             // Iterate the chunks.
             for chunk in table.chunks() {
                 println!(
                     "{}",
-                    std::str::from_utf8(&chunk.read(&mut cache).unwrap()).unwrap()
+                    std::str::from_utf8(hff.read(&chunk).await?.as_slice()).unwrap()
                 );
             }
         }

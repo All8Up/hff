@@ -1,32 +1,37 @@
-use crate::{read::*, Ecc};
+use super::{ChunkIter, Hff, TableIter};
+use crate::{ContentInfo, Ecc};
 use std::fmt::Debug;
 
 /// View of a table.
-pub struct TableView<'a> {
-    hff: &'a Hff,
+#[derive(Copy, Clone)]
+pub struct TableView<'a, T: Debug> {
+    hff: &'a Hff<T>,
     index: usize,
 }
 
-impl<'a> PartialEq for TableView<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        self.hff == other.hff && self.index == other.index
-    }
-}
-
-impl<'a> Debug for TableView<'a> {
+impl<'a, T: Debug> Debug for TableView<'a, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.hff.tables_array()[self.index])
     }
 }
 
-impl<'a> TableView<'a> {
+impl<'a, T: Debug> ContentInfo for TableView<'a, T> {
+    fn len(&self) -> u64 {
+        self.hff.tables_array()[self.index].metadata_length()
+    }
+    fn offset(&self) -> u64 {
+        self.hff.tables_array()[self.index].metadata_offset()
+    }
+}
+
+impl<'a, T: Debug> TableView<'a, T> {
     /// Create a new TableView.
-    pub(super) fn new(hff: &'a Hff, index: usize) -> Self {
+    pub(super) fn new(hff: &'a Hff<T>, index: usize) -> Self {
         Self { hff, index }
     }
 
     /// Get the hff container we're built from.
-    pub fn hff(&self) -> &Hff {
+    pub fn hff(&self) -> &Hff<T> {
         self.hff
     }
 
@@ -51,12 +56,12 @@ impl<'a> TableView<'a> {
     }
 
     /// Get an iterator to the child tables.
-    pub fn iter(&self) -> TableIter<'a> {
+    pub fn iter(&self) -> TableIter<'a, T> {
         TableIter::new(self.hff, self.index + 1)
     }
 
     /// Get an iterator of the chunks.
-    pub fn chunks(&self) -> ChunkIter<'a> {
+    pub fn chunks(&self) -> ChunkIter<'a, T> {
         let table = &self.hff.tables_array()[self.index];
         ChunkIter::new(
             self.hff,

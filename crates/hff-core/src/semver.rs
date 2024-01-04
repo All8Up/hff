@@ -15,6 +15,9 @@ pub struct Semver {
 }
 
 impl Semver {
+    /// Constant representing the byte size of the structure.
+    pub const SIZE: usize = std::mem::size_of::<Self>();
+
     /// Create a semantic versioning instance.
     pub const fn new(major: u16, minor: u16, patch: u32) -> Self {
         Self {

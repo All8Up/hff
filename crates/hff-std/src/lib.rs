@@ -1,6 +1,31 @@
 //! Implements the basic reader/writer functionality for HFF.
 #![warn(missing_docs)]
-use hff_core::Result;
+
+// Reexport needed types.
+#[cfg(feature = "compression")]
+pub use hff_core::read::decompress;
+
+pub use hff_core::{
+    read::{ChunkView, Hff, TableView},
+    write::{chunk, hff, table, HffDesc},
+    ChunkCache, Ecc, Result, NE, OP,
+};
+
+// Helper traits which provide blanket implementations over the
+// required trait combinations.
+
+mod write_seek;
+pub use write_seek::WriteSeek;
+
+mod read_seek;
+pub use read_seek::ReadSeek;
+
+/// Create a new builder instance.
+pub fn build<'a>(
+    tables: impl IntoIterator<Item = hff_core::write::TableBuilder<'a>>,
+) -> Result<hff_core::write::HffDesc<'a>> {
+    Ok(hff_core::write::hff(tables))
+}
 
 mod read;
 pub use read::*;
@@ -11,10 +36,6 @@ pub use write::*;
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(feature = "compression")]
-    use hff_core::read::ChunkView;
-    use hff_core::{read::Hff, write::*, Ecc};
-    use std::io::Seek;
 
     fn test_table<'a>() -> Result<HffDesc<'a>> {
         Ok(hff([
@@ -88,7 +109,7 @@ mod tests {
         ]))
     }
 
-    fn checks(hff: &Hff, cache: &mut ChunkCache) {
+    fn checks(hff: &Hff<ChunkCache>) {
         {
             // Check the content of root is as expected.
             let root = hff.tables().next().unwrap();
@@ -103,14 +124,17 @@ mod tests {
             assert_eq!(c0.primary(), "C0Prime".into());
             let c4 = root_children.next().unwrap();
             assert_eq!(c4.primary(), "C4Prime".into());
-            assert_eq!(root_children.next(), None);
+            assert!(root_children.next().is_none());
         }
 
         {
             // Check the metadata for the root.
             let root = hff.tables().next().unwrap();
-            let metadata = root.metadata(cache).unwrap();
-            assert!(std::str::from_utf8(&metadata)
+            // The resulting reader is just a reference to the data
+            // in the content.  You can take a &mut Read on it if you
+            // wish to use it with std::io methods such as copy.
+            let metadata = hff.reader(root);
+            assert!(std::str::from_utf8(metadata)
                 .unwrap()
                 .starts_with("This is some metadata"));
 
@@ -118,8 +142,8 @@ mod tests {
             let mut children = hff.tables().next().unwrap().iter();
             children.next();
             let c4 = children.next().unwrap();
-            let metadata = c4.metadata(cache).unwrap();
-            assert!(std::str::from_utf8(&metadata)
+            let metadata = hff.reader(c4);
+            assert!(std::str::from_utf8(metadata)
                 .unwrap()
                 .starts_with("And we're done."));
         }
@@ -163,24 +187,17 @@ mod tests {
 
                 #[cfg(feature = "compression")]
                 if chunk.secondary() == Ecc::new("TRS5") {
-                    let decompressed =
-                        ChunkView::decompress(chunk.read(cache).unwrap().as_slice()).unwrap();
+                    let decompressed = decompress(hff.reader(chunk)).unwrap();
                     assert_eq!(decompressed.len(), test_entry.2.len());
                     assert_eq!(decompressed, Vec::from(test_entry.2.as_bytes()));
                 } else {
                     assert_eq!(chunk.size(), test_entry.2.len());
-                    assert_eq!(
-                        chunk.read(cache).unwrap(),
-                        Vec::from(test_entry.2.as_bytes())
-                    );
+                    assert_eq!(hff.reader(chunk), Vec::from(test_entry.2.as_bytes()));
                 }
                 #[cfg(not(feature = "compression"))]
                 {
                     assert_eq!(chunk.size(), test_entry.2.len());
-                    assert_eq!(
-                        chunk.read(cache).unwrap(),
-                        Vec::from(test_entry.2.as_bytes())
-                    );
+                    assert_eq!(hff.reader(chunk), Vec::from(test_entry.2.as_bytes()));
                 }
             }
 
@@ -205,6 +222,8 @@ mod tests {
 
     #[test]
     fn test() {
+        use std::io::Seek;
+
         // Simple dev test for structure.
         {
             let content = test_table().unwrap();
@@ -216,8 +235,8 @@ mod tests {
 
             // Read it back in and iterate.
             writer.rewind().unwrap();
-            let (hff, mut cache) = Hff::read_full(&mut writer).unwrap();
-            checks(&hff, &mut cache);
+            let access = crate::read::read(&mut writer).unwrap();
+            checks(&access);
         }
 
         // Simple dev test for structure.
@@ -228,8 +247,8 @@ mod tests {
             assert!(content.write::<hff_core::OP>("Test", &mut buffer).is_ok());
 
             // Read it back in and iterate.
-            let (hff, mut cache) = Hff::read_full(&mut buffer.as_slice()).unwrap();
-            checks(&hff, &mut cache);
+            let access = crate::read::read(&mut buffer.as_slice()).unwrap();
+            checks(&access);
         }
     }
 }

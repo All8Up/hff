@@ -1,13 +1,11 @@
-pub use hff_std::ChunkCache;
+mod api;
+pub use api::*;
 
-mod chunk_reader;
-pub use chunk_reader::{ChunkReader, ReadSeek};
+mod async_std_reader;
+pub use async_std_reader::AsyncStdReader;
 
-mod reader;
-pub use reader::Reader;
+use async_std::io::{Read, Seek};
+use core::marker::Unpin;
 
-mod metadata;
-pub use metadata::Metadata;
-
-mod chunk;
-pub use chunk::Chunk;
+pub trait ReadSeek: Read + Seek + Unpin {}
+impl<T: Read + Seek + Unpin> ReadSeek for T {}

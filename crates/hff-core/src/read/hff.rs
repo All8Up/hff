@@ -1,10 +1,15 @@
-use crate::{read::*, Chunk, Header, Semver, Table};
-use std::{fmt::Debug, mem::size_of};
+use super::{DepthFirstIter, TableIter};
+use crate::{Chunk, Header, Semver, Table};
+use std::{
+    fmt::Debug,
+    mem::size_of,
+    ops::{Deref, DerefMut},
+};
 
 /// The Hff structure data.  This is an immutable representation of the
 /// content of an Hff stream.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Hff {
+#[derive(Debug)]
+pub struct Hff<T: Debug> {
     /// Was the structure in native endian?
     native: bool,
     /// The version of the file format.
@@ -13,11 +18,14 @@ pub struct Hff {
     tables: Vec<Table>,
     /// The chunks found within the header structure.
     chunks: Vec<Chunk>,
+    /// Access system for the underlying stream.
+    accessor: T,
 }
 
-impl Hff {
+impl<T: Debug> Hff<T> {
     /// Create a new Hff wrapper.
     pub fn new(
+        accessor: T,
         header: Header,
         tables: impl Into<Vec<Table>>,
         chunks: impl Into<Vec<Chunk>>,
@@ -27,6 +35,7 @@ impl Hff {
             version: header.version(),
             tables: tables.into(),
             chunks: chunks.into(),
+            accessor,
         }
     }
 
@@ -48,12 +57,12 @@ impl Hff {
     }
 
     /// Get an iterator over the tables in depth first order.
-    pub fn depth_first(&self) -> DepthFirstIter {
+    pub fn depth_first(&self) -> DepthFirstIter<'_, T> {
         DepthFirstIter::new(self)
     }
 
     /// Get an iterator over the child tables.
-    pub fn tables(&self) -> TableIter {
+    pub fn tables(&self) -> TableIter<'_, T> {
         TableIter::new(self, 0)
     }
 
@@ -65,5 +74,19 @@ impl Hff {
     /// Get access to the chunk array.
     pub fn chunks_array(&self) -> &[Chunk] {
         &self.chunks
+    }
+}
+
+impl<T: Debug> Deref for Hff<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.accessor
+    }
+}
+
+impl<T: Debug> DerefMut for Hff<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.accessor
     }
 }

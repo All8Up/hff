@@ -41,6 +41,10 @@ pub mod read;
 // Write support.
 pub mod write;
 
+// Information about metadata or chunk data.
+mod content_info;
+pub use content_info::ContentInfo;
+
 // General utilities.
 pub mod utilities;
 

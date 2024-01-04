@@ -27,6 +27,8 @@ impl Default for Ecc {
 }
 
 impl Ecc {
+    /// Constant representing the size of the structure.
+    pub const SIZE: usize = std::mem::size_of::<Self>();
     /// Constant representing an invalid Ecc.
     pub const INVALID: Ecc = Self(0);
     /// The file header magic value.
