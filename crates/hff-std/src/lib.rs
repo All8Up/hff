@@ -133,7 +133,7 @@ mod tests {
             // The resulting reader is just a reference to the data
             // in the content.  You can take a &mut Read on it if you
             // wish to use it with std::io methods such as copy.
-            let metadata = hff.reader(root);
+            let metadata = hff.read(&root).unwrap();
             assert!(std::str::from_utf8(metadata)
                 .unwrap()
                 .starts_with("This is some metadata"));
@@ -142,7 +142,7 @@ mod tests {
             let mut children = hff.tables().next().unwrap().iter();
             children.next();
             let c4 = children.next().unwrap();
-            let metadata = hff.reader(c4);
+            let metadata = hff.read(&c4).unwrap();
             assert!(std::str::from_utf8(metadata)
                 .unwrap()
                 .starts_with("And we're done."));
@@ -197,7 +197,7 @@ mod tests {
                 #[cfg(not(feature = "compression"))]
                 {
                     assert_eq!(chunk.size(), test_entry.2.len());
-                    assert_eq!(hff.reader(chunk), Vec::from(test_entry.2.as_bytes()));
+                    assert_eq!(hff.read(&chunk).unwrap(), Vec::from(test_entry.2.as_bytes()));
                 }
             }
 
