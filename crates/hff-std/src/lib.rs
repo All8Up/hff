@@ -187,12 +187,12 @@ mod tests {
 
                 #[cfg(feature = "compression")]
                 if chunk.secondary() == Ecc::new("TRS5") {
-                    let decompressed = decompress(hff.reader(chunk)).unwrap();
+                    let decompressed = decompress(hff.read(&chunk).unwrap()).unwrap();
                     assert_eq!(decompressed.len(), test_entry.2.len());
                     assert_eq!(decompressed, Vec::from(test_entry.2.as_bytes()));
                 } else {
                     assert_eq!(chunk.size(), test_entry.2.len());
-                    assert_eq!(hff.reader(chunk), Vec::from(test_entry.2.as_bytes()));
+                    assert_eq!(hff.read(&chunk).unwrap(), Vec::from(test_entry.2.as_bytes()));
                 }
                 #[cfg(not(feature = "compression"))]
                 {
