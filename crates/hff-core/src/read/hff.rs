@@ -1,5 +1,5 @@
 use super::{DepthFirstIter, TableIter};
-use crate::{Chunk, Header, Semver, Table};
+use crate::{Chunk, Ecc, Header, Semver, Table};
 use std::{
     fmt::Debug,
     mem::size_of,
@@ -14,6 +14,8 @@ pub struct Hff<T: Debug> {
     native: bool,
     /// The version of the file format.
     version: Semver,
+    /// The content type of the overall hff.
+    content_type: Ecc,
     /// The tables found in the header structure.
     tables: Vec<Table>,
     /// The chunks found within the header structure.
@@ -33,6 +35,7 @@ impl<T: Debug> Hff<T> {
         Self {
             native: header.is_native_endian(),
             version: header.version(),
+            content_type: header.content_type(),
             tables: tables.into(),
             chunks: chunks.into(),
             accessor,
@@ -47,6 +50,11 @@ impl<T: Debug> Hff<T> {
     /// Return the version of the file structure the file was read from.
     pub fn version(&self) -> Semver {
         self.version
+    }
+
+    /// Get the content type of the overall Hff.
+    pub fn content_type(&self) -> Ecc {
+        self.content_type
     }
 
     /// Get the offset from the start of the file to the start of the chunk data.
