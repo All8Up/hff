@@ -35,6 +35,11 @@ impl<'a, T: Debug> TableView<'a, T> {
         self.hff
     }
 
+    /// Determine if the table has metadata.
+    pub fn has_metadata(&self) -> bool {
+        self.hff.tables_array()[self.index].metadata_length() > 0
+    }
+
     /// Get the current index into the tables.
     pub fn index(&self) -> usize {
         self.index

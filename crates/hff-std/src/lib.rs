@@ -5,10 +5,14 @@
 #[cfg(feature = "compression")]
 pub use hff_core::read::decompress;
 
+// Pull in core if special behavior is needed.
+pub use hff_core;
+
+// Pull in common needs.  Aka: prelude.
 pub use hff_core::{
     read::{ChunkView, Hff, TableView},
     write::{chunk, hff, table, HffDesc},
-    ChunkCache, Ecc, Result, NE, OP,
+    ChunkCache, ContentInfo, Ecc, Error, Result, Semver, NE, OP,
 };
 
 // Helper traits which provide blanket implementations over the
@@ -192,12 +196,18 @@ mod tests {
                     assert_eq!(decompressed, Vec::from(test_entry.2.as_bytes()));
                 } else {
                     assert_eq!(chunk.size(), test_entry.2.len());
-                    assert_eq!(hff.read(&chunk).unwrap(), Vec::from(test_entry.2.as_bytes()));
+                    assert_eq!(
+                        hff.read(&chunk).unwrap(),
+                        Vec::from(test_entry.2.as_bytes())
+                    );
                 }
                 #[cfg(not(feature = "compression"))]
                 {
                     assert_eq!(chunk.size(), test_entry.2.len());
-                    assert_eq!(hff.read(&chunk).unwrap(), Vec::from(test_entry.2.as_bytes()));
+                    assert_eq!(
+                        hff.read(&chunk).unwrap(),
+                        Vec::from(test_entry.2.as_bytes())
+                    );
                 }
             }
 
