@@ -1,29 +1,21 @@
-[package]
-name = "hff"
-version = "0.4.0"
-edition = "2021"
-authors = ["All8Up <all8up@gmail.com>"]
-license-file = "LICENSE"
-description = "Hierarchical File Format"
-repository = "https://github.com/All8Up/hff.git"
-readme = "README.md"
+[workspace]
+resolver = "2"
+members = [
+    "./crates/hff",
+    "./crates/hff-core",
+    "./crates/hff-std",
+    "./crates/hff-async-std",
+    "./crates/hff-tokio",
+    "./crates/hff-dump",
+    "./crates/hff-pack",
+]
 
-[dependencies]
-# Core structure of Hff.
-hff-core = { path = "./crates/hff-core", version = "0.4.0" }
-thiserror = "1.0.51"
-
-# Synchronous version.  Always available.
-hff-std = { path = "./crates/hff-std", version = "0.4.0" }
-
-# Support for async-std.
-hff-async-std = { path = "./crates/hff-async-std", version = "0.4.0", optional = true }
-
-# Support for tokio.
-hff-tokio = { path = "./crates/hff-tokio", version = "0.4.0", optional = true }
-
-[features]
-default = []
-async-std-rt = ["dep:hff-async-std"]
-tokio-rt = ["dep:hff-tokio"]
-compression = ["hff-std/compression"]
+# Override the source crates when developing.
+[patch.crates-io]
+hff = { path = "./crates/hff" }
+hff-core = { path = "./crates/hff-core" }
+hff-std = { path = "./crates/hff-std" }
+hff-async-std = { path = "./crates/hff-async-std" }
+hff-tokio = { path = "./crates/hff-tokio" }
+hff-dump = { path = "./crates/hff-dump" }
+hff-pack = { path = "./crates/hff-pack" }

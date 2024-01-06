@@ -1,0 +1,13 @@
+[package]
+name = "hff-pack"
+version = "0.4.0"
+edition = "2021"
+
+[dependencies]
+thiserror = "1.0.50"
+clap = { version = "4.4.8", features = ["derive"] }
+hff-std = { version = "0.4.0", features = ["compression"] }
+async-std = { version = "1.12.0", features = ["attributes"] }
+byteorder = "1.5.0"
+async-recursion = "1.0.5"
+normpath = "1.1.1"
