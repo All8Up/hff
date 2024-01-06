@@ -2,7 +2,7 @@ use crate::{ReadSeek, StdReader};
 use hff_core::{
     byteorder::ReadBytesExt,
     read::{Hff, Inspection},
-    ByteOrder, Chunk, ChunkCache, Ecc, Endian, Error, Header, Result, Semver, Table, BE, LE, NE,
+    ByteOrder, Chunk, ChunkCache, Ecc, Endian, Error, Header, Result, Table, Version, BE, LE, NE,
     OP,
 };
 use std::{io::Read, mem::size_of};
@@ -75,14 +75,16 @@ fn read_header(reader: &mut dyn Read) -> Result<Header> {
         Some(endian) => match endian {
             Endian::Little => Ok(Header::with(
                 magic.into(),
-                Semver::read::<LE>(reader)?,
+                Version::read::<LE>(reader)?,
+                reader.read_u32::<LE>()?,
                 Ecc::read::<LE>(reader)?,
                 reader.read_u32::<LE>()?,
                 reader.read_u32::<LE>()?,
             )),
             Endian::Big => Ok(Header::with(
                 magic.into(),
-                Semver::read::<BE>(reader)?,
+                Version::read::<BE>(reader)?,
+                reader.read_u32::<BE>()?,
                 Ecc::read::<BE>(reader)?,
                 reader.read_u32::<BE>()?,
                 reader.read_u32::<BE>()?,

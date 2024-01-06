@@ -1,11 +1,10 @@
 //! The file header.
-use super::Semver;
-use crate::{Ecc, Endian, Error, Result, BE, LE, NATIVE_ENDIAN, NE};
+use crate::{Ecc, Endian, Error, Result, Version, BE, LE, NATIVE_ENDIAN, NE};
 use byteorder::{ByteOrder, ReadBytesExt, WriteBytesExt};
 use std::io::Write;
 
 /// The current version of the format.
-pub const FORMAT_VERSION: Semver = Semver::new(0, 1, 0);
+pub const FORMAT_VERSION: Version = Version::new(0, 2);
 
 /// The file header.
 #[repr(C)]
@@ -14,9 +13,12 @@ pub struct Header {
     /// Magic identifier.  Ecc::HFF_MAGIC
     magic: Ecc,
     /// Version of the file format.
-    version: Semver,
+    version: Version,
+    /// Identification type for tables and chunks.
+    id_type: u32,
     /// The overall content type of this file.
-    content_type: Ecc,
+    /// Unlike table and chunk ID's, this is always an 8 byte character code.
+    content: Ecc,
     /// Total count of tables in the header.
     table_count: u32,
     /// Total count of chunks in the header.
@@ -28,11 +30,12 @@ impl Header {
     pub const SIZE: usize = std::mem::size_of::<Self>();
 
     /// Create a new instance.
-    pub fn new(content_type: Ecc, table_count: u32, chunk_count: u32) -> Self {
+    pub fn new(content: Ecc, table_count: u32, chunk_count: u32) -> Self {
         Self {
             magic: Ecc::HFF_MAGIC,
             version: FORMAT_VERSION,
-            content_type,
+            id_type: 0, // TODO: Only supports pairs of Ecc at the moment.
+            content,
             table_count,
             chunk_count,
         }
@@ -41,15 +44,17 @@ impl Header {
     /// Create a new instance with the given data.
     pub fn with(
         magic: Ecc,
-        version: Semver,
-        content_type: Ecc,
+        version: Version,
+        id_type: u32,
+        content: Ecc,
         table_count: u32,
         chunk_count: u32,
     ) -> Self {
         Self {
             magic,
             version,
-            content_type,
+            id_type,
+            content,
             table_count,
             chunk_count,
         }
@@ -75,13 +80,13 @@ impl Header {
     }
 
     /// Get the container version.
-    pub fn version(&self) -> Semver {
+    pub fn version(&self) -> Version {
         self.version
     }
 
-    /// Get the content type.
-    pub fn content_type(&self) -> Ecc {
-        self.content_type
+    /// Identifier type.
+    pub fn id_type(&self) -> u32 {
+        self.id_type
     }
 
     /// What's the endian?
@@ -105,7 +110,8 @@ impl Header {
         let writer: &mut dyn Write = &mut buffer;
         self.magic.write::<E>(writer)?;
         self.version.write::<E>(writer)?;
-        self.content_type.write::<E>(writer)?;
+        writer.write_u32::<E>(self.id_type)?;
+        self.content.write::<E>(writer)?;
         writer.write_u32::<E>(self.table_count)?;
         writer.write_u32::<E>(self.chunk_count)?;
         Ok(buffer)
@@ -119,7 +125,8 @@ impl Header {
         Self {
             magic: self.magic.swap_bytes(),
             version: self.version.swap_bytes(),
-            content_type: self.content_type.swap_bytes(),
+            id_type: self.id_type.swap_bytes(),
+            content: self.content.swap_bytes(),
             table_count: self.table_count.swap_bytes(),
             chunk_count: self.chunk_count.swap_bytes(),
         }
@@ -142,14 +149,16 @@ impl TryFrom<&[u8]> for Header {
             Some(endian) => match endian {
                 Endian::Little => Ok(Header::with(
                     magic,
-                    Semver::read::<LE>(reader)?,
+                    Version::read::<LE>(reader)?,
+                    reader.read_u32::<LE>()?,
                     Ecc::read::<LE>(reader)?,
                     reader.read_u32::<LE>()?,
                     reader.read_u32::<LE>()?,
                 )),
                 Endian::Big => Ok(Header::with(
                     magic,
-                    Semver::read::<BE>(reader)?,
+                    Version::read::<BE>(reader)?,
+                    reader.read_u32::<BE>()?,
                     Ecc::read::<BE>(reader)?,
                     reader.read_u32::<BE>()?,
                     reader.read_u32::<BE>()?,
@@ -188,8 +197,8 @@ mod tests {
             let dup: Header = buffer.as_slice().try_into().unwrap();
 
             assert_eq!(dup.magic, Ecc::HFF_MAGIC);
-            assert_eq!(dup.version, Semver::new(0, 1, 0));
-            assert_eq!(dup.content_type, Ecc::new("Test"));
+            assert_eq!(dup.version, Version::new(0, 2));
+            assert_eq!(dup.content, Ecc::new("Test"));
             assert_eq!(dup.table_count, 1);
             assert_eq!(dup.chunk_count, 2);
         }
@@ -201,8 +210,8 @@ mod tests {
             let dup: Header = buffer.as_slice().try_into().unwrap();
 
             assert_eq!(dup.magic, Ecc::HFF_MAGIC.swap_bytes());
-            assert_eq!(dup.version, Semver::new(0, 1, 0));
-            assert_eq!(dup.content_type, Ecc::new("Test"));
+            assert_eq!(dup.version, Version::new(0, 2));
+            assert_eq!(dup.content, Ecc::new("Test"));
             assert_eq!(dup.table_count, 1);
             assert_eq!(dup.chunk_count, 2);
         }
