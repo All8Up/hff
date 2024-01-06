@@ -1,5 +1,5 @@
 use super::{DepthFirstIter, TableIter};
-use crate::{Chunk, Header, Semver, Table};
+use crate::{Chunk, Header, Table, Version};
 use std::{
     fmt::Debug,
     mem::size_of,
@@ -13,7 +13,7 @@ pub struct Hff<T: Debug> {
     /// Was the structure in native endian?
     native: bool,
     /// The version of the file format.
-    version: Semver,
+    version: Version,
     /// The tables found in the header structure.
     tables: Vec<Table>,
     /// The chunks found within the header structure.
@@ -45,7 +45,7 @@ impl<T: Debug> Hff<T> {
     }
 
     /// Return the version of the file structure the file was read from.
-    pub fn version(&self) -> Semver {
+    pub fn version(&self) -> Version {
         self.version
     }
 

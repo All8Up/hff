@@ -15,9 +15,9 @@ pub use error::{Error, Result};
 mod ecc;
 pub use ecc::Ecc;
 
-// The semantic versioning type.
-mod semver;
-pub use semver::Semver;
+// File format versioning.
+mod version;
+pub use version::Version;
 
 // The file header.
 mod header;

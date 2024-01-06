@@ -1,30 +1,23 @@
 use byteorder::{ByteOrder, ReadBytesExt, WriteBytesExt};
 use std::io::{Error, Read, Write};
 
-/// Semantic version.  The 'patch' is u32 only because we want
-/// this structure to fit into 64 bits.
+/// Version of the file format.
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct Semver {
+pub struct Version {
     /// Major version.
     pub major: u16,
     /// Minor version.
     pub minor: u16,
-    /// Patch version.
-    pub patch: u32,
 }
 
-impl Semver {
+impl Version {
     /// Constant representing the byte size of the structure.
     pub const SIZE: usize = std::mem::size_of::<Self>();
 
     /// Create a semantic versioning instance.
-    pub const fn new(major: u16, minor: u16, patch: u32) -> Self {
-        Self {
-            major,
-            minor,
-            patch,
-        }
+    pub const fn new(major: u16, minor: u16) -> Self {
+        Self { major, minor }
     }
 
     /// Get the major version.
@@ -37,17 +30,11 @@ impl Semver {
         self.minor
     }
 
-    /// Get the patch version.
-    pub const fn patch(&self) -> u32 {
-        self.patch
-    }
-
-    /// Return the semver in the opposite endian.
+    /// Return the Version in the opposite endian.
     pub const fn swap_bytes(&self) -> Self {
         Self {
             major: self.major.swap_bytes(),
             minor: self.minor.swap_bytes(),
-            patch: self.patch.swap_bytes(),
         }
     }
 
@@ -56,7 +43,6 @@ impl Semver {
         Ok(Self {
             major: reader.read_u16::<E>()?,
             minor: reader.read_u16::<E>()?,
-            patch: reader.read_u32::<E>()?,
         })
     }
 
@@ -64,7 +50,6 @@ impl Semver {
     pub fn write<E: ByteOrder>(self, writer: &mut dyn Write) -> Result<(), Error> {
         writer.write_u16::<E>(self.major)?;
         writer.write_u16::<E>(self.minor)?;
-        writer.write_u32::<E>(self.patch)?;
 
         Ok(())
     }
@@ -76,32 +61,30 @@ mod tests {
 
     #[test]
     fn test_layout() {
-        assert_eq!(std::mem::size_of::<Semver>(), 8);
+        assert_eq!(std::mem::size_of::<Version>(), 4);
     }
 
     #[test]
     fn test_serialization_le() {
         let mut buffer = vec![];
-        let semver = Semver::new(1, 2, 3);
-        assert!(semver.write::<crate::LE>(&mut buffer).is_ok());
+        let version = Version::new(1, 2);
+        assert!(version.write::<crate::LE>(&mut buffer).is_ok());
 
-        let result = Semver::read::<crate::LE>(&mut buffer.as_slice()).unwrap();
-        assert_eq!(semver, result);
+        let result = Version::read::<crate::LE>(&mut buffer.as_slice()).unwrap();
+        assert_eq!(version, result);
         assert_eq!(result.major(), 1);
         assert_eq!(result.minor(), 2);
-        assert_eq!(result.patch(), 3);
     }
 
     #[test]
     fn test_serialization_be() {
         let mut buffer = vec![];
-        let semver = Semver::new(1, 2, 3);
-        assert!(semver.write::<crate::BE>(&mut buffer).is_ok());
+        let version = Version::new(1, 2);
+        assert!(version.write::<crate::BE>(&mut buffer).is_ok());
 
-        let result = Semver::read::<crate::BE>(&mut buffer.as_slice()).unwrap();
-        assert_eq!(semver, result);
+        let result = Version::read::<crate::BE>(&mut buffer.as_slice()).unwrap();
+        assert_eq!(version, result);
         assert_eq!(result.major(), 1);
         assert_eq!(result.minor(), 2);
-        assert_eq!(result.patch(), 3);
     }
 }

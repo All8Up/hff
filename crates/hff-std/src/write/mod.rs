@@ -140,6 +140,14 @@ mod tests {
     use hff_core::write::{chunk, hff, table};
 
     #[test]
+    fn empty() {
+        let content = hff([]);
+        let mut buffer = vec![];
+        content.write::<hff_core::LE>("Test", &mut buffer).unwrap();
+        let _hff = crate::read::inspect(&mut buffer.as_slice()).unwrap();
+    }
+
+    #[test]
     fn test() {
         let content = hff([
             table("p0", "s0")
