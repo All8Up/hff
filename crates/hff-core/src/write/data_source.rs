@@ -115,6 +115,14 @@ impl<'a> TryInto<DataSource<'a>> for &str {
     }
 }
 
+impl<'a> TryInto<DataSource<'a>> for String {
+    type Error = Error;
+
+    fn try_into(self) -> std::prelude::v1::Result<DataSource<'a>, Self::Error> {
+        Ok(DataSource::Owned(self.as_bytes().into()))
+    }
+}
+
 impl<'a> TryInto<DataSource<'a>> for &[u8] {
     type Error = Error;
 

@@ -38,25 +38,15 @@ async fn main() -> Result<()> {
         let structure = Structure::new(input.into(), !options.non_recursive).await?;
         let structure = structure.strip_prefix(parent)?;
 
+        // Build up the tables for the structure.
+        let tables = structure.to_tables(parent)?;
+
         // Write and compress.
 
         let desc = hff([]);
+
         let mut buffer = vec![];
-        desc.write::<NE>(HFF_ARCHIVE, &mut buffer.as_mut_slice())?;
-
-        /*
-        // Build a package from the directory.
-        let hierarchy = Hierarchy::new(&options.input, !options.non_recursive).await?;
-        // And convert to a writer.
-        let content = hierarchy.write(&options.input, options.compression, None)?;
-
-        // Write the content to the output file.
-        if !options.big_endian {
-            //hff::write::<hff::LE>(&mut output, content)?;
-        } else {
-            //hff::write::<hff::BE>(&mut output, content)?;
-        }
-         */
+        desc.write::<NE>(HFF_ARCHIVE, &mut buffer)?;
     } else if options.input.is_file() {
         println!("The input must be a directory.");
         std::process::exit(-1);

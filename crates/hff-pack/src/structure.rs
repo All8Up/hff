@@ -4,7 +4,9 @@ use async_std::{
     path::{Path, PathBuf},
     task::spawn,
 };
-use hff_std::{Error, Result};
+use hff_std::hff_core::utilities::{Ksv, StringVec};
+use hff_std::hff_core::{write::TableDesc, Table};
+use hff_std::*;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Structure {
@@ -54,6 +56,42 @@ impl Structure {
                 Ok(Self::Directory(p.into(), c))
             }
             Self::File(path) => Ok(Self::File(path)),
+        }
+    }
+
+    /// Convert the structure into a set of tables.
+    pub fn to_tables<'a>(self, root: &Path) -> Result<Vec<TableDesc<'a>>> {
+        match self {
+            Self::File(file) => Ok(vec![table(super::HFF_FILE, Ecc::INVALID)
+                .chunks([])
+                .finish()]),
+            Self::Directory(path, children) => {
+                // The metadata attached to this table will describe the names
+                // of the directory and the files which are stored in the chunks.
+                let mut ksv = Ksv::new();
+                // Insert the path of this directory.
+                ksv.insert(
+                    "dir".into(),
+                    [path.display().to_string()].into_iter().into(),
+                );
+
+                // Build children tables and chunks.
+                let mut children = vec![];
+                let mut chunks = vec![];
+
+                for child in children {
+                    match child {
+                        Self::File(file) => chunks.push(chunk(
+                            super::HFF_FILE,
+                            Ecc::INVALID,
+                            file.display().to_string(),
+                        )?),
+                        Self::Directory(path, children) => {}
+                    }
+                }
+
+                Ok(vec![])
+            }
         }
     }
 
