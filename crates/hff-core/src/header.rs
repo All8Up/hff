@@ -18,7 +18,7 @@ pub struct Header {
     id_type: u32,
     /// The overall content type of this file.
     /// Unlike table and chunk ID's, this is always an 8 byte character code.
-    content: Ecc,
+    content_type: Ecc,
     /// Total count of tables in the header.
     table_count: u32,
     /// Total count of chunks in the header.
@@ -30,12 +30,12 @@ impl Header {
     pub const SIZE: usize = std::mem::size_of::<Self>();
 
     /// Create a new instance.
-    pub fn new(content: Ecc, table_count: u32, chunk_count: u32) -> Self {
+    pub fn new(content_type: Ecc, table_count: u32, chunk_count: u32) -> Self {
         Self {
             magic: Ecc::HFF_MAGIC,
             version: FORMAT_VERSION,
             id_type: 0, // TODO: Only supports pairs of Ecc at the moment.
-            content,
+            content_type,
             table_count,
             chunk_count,
         }
@@ -46,7 +46,7 @@ impl Header {
         magic: Ecc,
         version: Version,
         id_type: u32,
-        content: Ecc,
+        content_type: Ecc,
         table_count: u32,
         chunk_count: u32,
     ) -> Self {
@@ -54,7 +54,7 @@ impl Header {
             magic,
             version,
             id_type,
-            content,
+            content_type,
             table_count,
             chunk_count,
         }
@@ -84,6 +84,11 @@ impl Header {
         self.version
     }
 
+    /// Get the content type of the container.
+    pub fn content_type(&self) -> Ecc {
+        self.content_type
+    }
+
     /// Identifier type.
     pub fn id_type(&self) -> u32 {
         self.id_type
@@ -111,7 +116,7 @@ impl Header {
         self.magic.write::<E>(writer)?;
         self.version.write::<E>(writer)?;
         writer.write_u32::<E>(self.id_type)?;
-        self.content.write::<E>(writer)?;
+        self.content_type.write::<E>(writer)?;
         writer.write_u32::<E>(self.table_count)?;
         writer.write_u32::<E>(self.chunk_count)?;
         Ok(buffer)
@@ -126,7 +131,7 @@ impl Header {
             magic: self.magic.swap_bytes(),
             version: self.version.swap_bytes(),
             id_type: self.id_type.swap_bytes(),
-            content: self.content.swap_bytes(),
+            content_type: self.content_type.swap_bytes(),
             table_count: self.table_count.swap_bytes(),
             chunk_count: self.chunk_count.swap_bytes(),
         }
@@ -198,7 +203,7 @@ mod tests {
 
             assert_eq!(dup.magic, Ecc::HFF_MAGIC);
             assert_eq!(dup.version, Version::new(0, 2));
-            assert_eq!(dup.content, Ecc::new("Test"));
+            assert_eq!(dup.content_type, Ecc::new("Test"));
             assert_eq!(dup.table_count, 1);
             assert_eq!(dup.chunk_count, 2);
         }
@@ -211,7 +216,7 @@ mod tests {
 
             assert_eq!(dup.magic, Ecc::HFF_MAGIC.swap_bytes());
             assert_eq!(dup.version, Version::new(0, 2));
-            assert_eq!(dup.content, Ecc::new("Test"));
+            assert_eq!(dup.content_type, Ecc::new("Test"));
             assert_eq!(dup.table_count, 1);
             assert_eq!(dup.chunk_count, 2);
         }

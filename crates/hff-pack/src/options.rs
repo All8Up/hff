@@ -12,7 +12,7 @@ pub struct Options {
     #[arg(long, short)]
     pub non_recursive: bool,
     /// Compression level for the content?
-    #[arg(long, short)]
+    #[arg(long, short, default_value = "9")]
     pub compression: Option<u32>,
 
     /// Endian mode.

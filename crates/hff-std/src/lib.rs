@@ -11,8 +11,9 @@ pub use hff_core;
 // Pull in common needs.  Aka: prelude.
 pub use hff_core::{
     read::{ChunkView, Hff, TableView},
-    write::{chunk, hff, table, HffDesc},
-    ChunkCache, ContentInfo, Ecc, Error, Result, Version, NE, OP,
+    utilities,
+    write::{chunk, hff, table, ChunkDesc, HffDesc, TableBuilder},
+    ByteOrder, ChunkCache, ContentInfo, Ecc, Error, Result, Version, NE, OP,
 };
 
 // Helper traits which provide blanket implementations over the
