@@ -100,19 +100,22 @@ impl Structure {
         self,
         root: &Path,
         compression: impl Fn(&Path) -> Option<u32>,
-    ) -> Result<Vec<TableBuilder<'a>>> {
+    ) -> Result<TableBuilder<'a>> {
         match self {
             Self::File(file) => archive_single_file::<E>(root, file, &compression),
-            Self::Directory(path, children) => archive_directory(path, children, &compression),
+            Self::Directory(path, children) => {
+                archive_directory::<E>(root, path, children, &compression)
+            }
         }
     }
 }
 
-fn archive_directory<'a>(
+fn archive_directory<'a, E: ByteOrder>(
+    root: &Path,
     path: PathBuf,
-    children: Vec<Structure>,
+    structure: Vec<Structure>,
     compression: &impl Fn(&Path) -> Option<u32>,
-) -> Result<Vec<TableBuilder<'a>>> {
+) -> Result<TableBuilder<'a>> {
     // The metadata attached to this table will describe the names
     // of the directory and the files which are stored in the chunks.
     let mut ksv = Ksv::new();
@@ -124,27 +127,70 @@ fn archive_directory<'a>(
         [path.display().to_string()].into_iter().into(),
     );
 
-    println!("{:?}", ksv);
+    // Build children tables and chunks.
+    let (tables, chunks, files) = archive_level::<E>(root, path, structure, compression)?;
+    // Insert the file names into the metadata.
+    ksv.insert("files".into(), files.into_iter().into());
+
+    // And build the outer table for this level.
+    Ok(table(super::HFF_DIR, Ecc::INVALID)
+        .metadata(ksv.to_bytes::<E>()?)?
+        .children(tables)
+        .chunks(chunks))
+}
+
+fn archive_level<'a, E: ByteOrder>(
+    root: &Path,
+    path: PathBuf,
+    children: Vec<Structure>,
+    compression: &impl Fn(&Path) -> Option<u32>,
+) -> Result<(Vec<TableBuilder<'a>>, Vec<ChunkDesc<'a>>, Vec<String>)> {
+    // The metadata attached to this table will describe the names
+    // of the directory and the files which are stored in the chunks.
+    let mut ksv = Ksv::new();
+
+    // Insert the path of the root directory for everything we find.
+    // This is just the name and not the full path.
+    ksv.insert(
+        "dir".into(),
+        [path.display().to_string()].into_iter().into(),
+    );
 
     // Build children tables and chunks.
     let mut tables = vec![];
     let mut chunks = vec![];
+    let mut files = vec![];
 
     for child in children {
         match child {
-            Structure::File(file) => chunks.push(chunk(
-                super::HFF_FILE,
-                Ecc::INVALID,
-                file.display().to_string(),
-            )?),
-            Structure::Directory(..) => {
-                println!("D: {:?}", child);
-                tables.push(child);
+            Structure::File(file) => {
+                let file: std::path::PathBuf = file.into();
+                files.push(file.display().to_string());
+
+                let path = root.join(path.join(&file));
+                chunks.push(file_to_chunk(compression, path.into())?);
+            }
+            Structure::Directory(p, c) => {
+                let root = root.join(&path);
+
+                let mut ksv = Ksv::new();
+                ksv.insert("dir".into(), [p.display().to_string()].into_iter().into());
+                let (t, c, f) = archive_level::<E>(&root, p, c, compression)?;
+
+                // Insert the file names into the metadata.
+                ksv.insert("files".into(), f.into_iter().into());
+
+                tables.push(
+                    table(super::HFF_DIR, Ecc::INVALID)
+                        .children(t.into_iter())
+                        .chunks(c.into_iter())
+                        .metadata(ksv.to_bytes::<E>()?)?,
+                )
             }
         }
     }
 
-    Ok(vec![])
+    Ok((tables, chunks, files))
 }
 
 /// Given a single file, turn it into a table entry.
@@ -153,7 +199,7 @@ fn archive_single_file<'a, E: ByteOrder>(
     root: &Path,
     file: PathBuf,
     compression: &impl Fn(&Path) -> Option<u32>,
-) -> Result<Vec<TableBuilder<'a>>> {
+) -> Result<TableBuilder<'a>> {
     // Build the path to the file.
     let file_path = root.join(&file);
 
@@ -166,14 +212,14 @@ fn archive_single_file<'a, E: ByteOrder>(
 
     // Attempt to open the file as an hff first.
     match hff_std::open(File::open(&file_path)?) {
-        Ok(hff) => Ok(vec![hff_to_table::<E>(root, file, hff, compression)?]),
+        Ok(hff) => Ok(hff_to_table::<E>(root, file, hff, compression)?),
         Err(_) => {
             // The file is not an hff, so just pack it into a chunk.
             let file_path: std::path::PathBuf = file_path.into();
             let chunk = file_to_chunk(compression, file_path)?;
-            Ok(vec![table(super::HFF_FILE, Ecc::INVALID)
+            Ok(table(super::HFF_FILE, Ecc::INVALID)
                 .chunks([chunk])
-                .metadata(ksv.to_bytes::<E>()?)?])
+                .metadata(ksv.to_bytes::<E>()?)?)
         }
     }
 }

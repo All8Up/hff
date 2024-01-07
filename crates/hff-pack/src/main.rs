@@ -41,12 +41,12 @@ async fn main<'a>() -> Result<()> {
         let structure = structure.strip_prefix(parent)?;
 
         // Build up the tables for the structure.
-        let tables = structure.to_tables::<NE>(parent, |_| None)?;
+        let root = structure.to_tables::<NE>(parent, |_| options.compression)?;
 
         // Create a file to write the content into.
         let mut output = std::fs::File::create(&options.output)?;
         // And write.
-        hff(tables.into_iter()).write::<NE>(HFF_ARCHIVE, &mut output)?;
+        hff([root]).write::<NE>(HFF_ARCHIVE, &mut output)?;
         output.flush()?;
     } else if options.input.is_file() {
         // Get the input file and the parent path.
@@ -58,12 +58,12 @@ async fn main<'a>() -> Result<()> {
         let structure = structure.strip_prefix(parent)?;
 
         // Build up the tables for the structure.
-        let tables = structure.to_tables::<NE>(parent, |_| options.compression)?;
+        let root = structure.to_tables::<NE>(parent, |_| options.compression)?;
 
         // Create a file to write the content into.
         let mut output = std::fs::File::create(&options.output)?;
         // And write.
-        hff(tables.into_iter()).write::<NE>(HFF_ARCHIVE, &mut output)?;
+        hff([root]).write::<NE>(HFF_ARCHIVE, &mut output)?;
         output.flush()?;
     } else {
         println!("The input directory does not exist.");
