@@ -18,10 +18,8 @@
 //!     .children([
 //!         table("Child1", Ecc::INVALID)
 //!         .metadata("Unique to this table.").unwrap()
-//!         // Chunks can source from many things, in this case it is a PathBuf
-//!         // for this file which will be embedded.
 //!         .chunks([
-//!             chunk("ThisFile", "Copy", std::path::PathBuf::from(file!())).unwrap()
+//!             chunk("ThisFile", "Copy", "more data").unwrap()
 //!         ])
 //!     ]),
 //!     // And there can be multiple tables at the root.

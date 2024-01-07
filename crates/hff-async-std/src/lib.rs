@@ -30,12 +30,10 @@ mod tests {
                 // Tables can have child tables.
                 .children([table("Child1", Ecc::INVALID)
                     .metadata("Unique to this table.")?
-                    // Chunks can source from many things, in this case it is a PathBuf
-                    // for this file which will be embedded.
                     .chunks([chunk(
                         "ThisFile",
                         "Copy",
-                        std::path::PathBuf::from(file!()),
+                        "More stuff to put in the chunk.",
                     )?])]),
             // And there can be multiple tables at the root.
             table("Child2", Ecc::INVALID),
