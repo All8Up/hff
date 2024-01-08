@@ -11,6 +11,7 @@ readme = "README.md"
 [dependencies]
 byteorder = "1.5.0"
 thiserror = "1.0.51"
+uuid  ="1.6.1"
 
 # Support for compressed chunks.
 xz2 = { version = "0.1.7", optional = true }

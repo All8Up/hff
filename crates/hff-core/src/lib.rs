@@ -11,6 +11,12 @@ pub use endian::*;
 mod error;
 pub use error::{Error, Result};
 
+// We can use a number of different identification
+// schemes within tables and chunks.  Different
+// identifiers have different purposes.
+mod identifier;
+pub use identifier::*;
+
 // The eight character code type.
 mod ecc;
 pub use ecc::Ecc;
