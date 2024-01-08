@@ -13,6 +13,7 @@ name = "hff"
 path = "./cmd/hff.rs"
 test = false
 bench = false
+required-features = ["compression"]
 
 [dependencies]
 # Core structure of Hff.
