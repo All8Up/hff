@@ -6,7 +6,6 @@ members = [
     "./crates/hff-std",
     "./crates/hff-async-std",
     "./crates/hff-tokio",
-    "./crates/hff-pack",
 ]
 
 # Override the source crates when developing.
@@ -16,4 +15,3 @@ hff-core = { path = "./crates/hff-core" }
 hff-std = { path = "./crates/hff-std" }
 hff-async-std = { path = "./crates/hff-async-std" }
 hff-tokio = { path = "./crates/hff-tokio" }
-hff-pack = { path = "./crates/hff-pack" }
