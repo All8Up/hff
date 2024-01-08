@@ -1,38 +1,34 @@
-use std::fs::File;
-
-use async_std::stream::StreamExt;
-use async_std::{
-    fs::read_dir,
-    path::{Path, PathBuf},
-    task::spawn,
-};
-use hff_std::hff_core::{
-    write::{ChunkDesc, TableDesc},
-    Table,
-};
+use hff_std::hff_core::write::ChunkDesc;
 use hff_std::utilities::{Ksv, StringVec};
 use hff_std::*;
+use std::{
+    fs::{read_dir, File},
+    path::{Path, PathBuf},
+};
 
+/// Structure of a scanned directory.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Structure {
+    /// A directory entry.
     Directory(PathBuf, Vec<Structure>),
+    /// A file entry.
     File(PathBuf),
 }
 
 impl Structure {
     /// Create a new structure instance from the given path.
-    pub async fn new(path: &Path, recursive: bool) -> Result<Self> {
+    pub fn new(path: &Path, recursive: bool) -> Result<Self> {
         use normpath::PathExt;
-        let path: PathBuf = std::path::PathBuf::from(path).normalize()?.as_path().into();
+        let path: PathBuf = path.normalize()?.into();
 
-        if path.exists().await {
-            let metadata = path.metadata().await?;
+        if path.exists() {
+            let metadata = path.metadata()?;
             let file_type = metadata.file_type();
 
             if file_type.is_file() {
                 Ok(Self::File(path.into()))
             } else if file_type.is_dir() {
-                Ok(Self::scan_directory(path.into(), recursive).await?)
+                Ok(Self::scan_directory(path.into(), recursive)?)
             } else {
                 Err(Error::Invalid(format!("Invalid root: {:?}", path)))
             }
@@ -65,31 +61,25 @@ impl Structure {
     }
 
     /// Scan the given directory for files and child directories.
-    #[async_recursion::async_recursion]
-    async fn scan_directory(path: PathBuf, recursive: bool) -> Result<Self> {
+    fn scan_directory(path: PathBuf, recursive: bool) -> Result<Self> {
         let mut result = vec![];
-        let mut directories = vec![];
-        let mut reader = read_dir(&path).await?;
+        let mut reader = read_dir(&path)?;
 
-        while let Some(entry) = reader.next().await {
+        while let Some(entry) = reader.next() {
             match entry {
                 Ok(entry) => {
-                    let metadata = entry.metadata().await?;
+                    let metadata = entry.metadata()?;
                     if metadata.file_type().is_file() {
                         result.push(Self::File(entry.path().file_name().unwrap().into()));
                     } else if metadata.file_type().is_dir() {
                         if recursive {
                             let path = entry.path();
-                            directories.push(spawn(Self::scan_directory(path, recursive)));
+                            result.push(Self::scan_directory(path, recursive)?);
                         }
                     }
                 }
                 Err(e) => return Err(e.into()),
             }
-        }
-
-        while let Some(child) = directories.pop() {
-            result.push(child.await?);
         }
 
         Ok(Self::Directory(path.into(), result))
@@ -212,7 +202,7 @@ fn archive_single_file<'a, E: ByteOrder>(
 
     // Attempt to open the file as an hff first.
     match hff_std::open(File::open(&file_path)?) {
-        Ok(hff) => Ok(hff_to_table::<E>(root, file, hff, compression)?),
+        Ok(hff) => Ok(hff_to_table::<E>(file, hff)?),
         Err(_) => {
             // The file is not an hff, so just pack it into a chunk.
             let file_path: std::path::PathBuf = file_path.into();
@@ -225,12 +215,7 @@ fn archive_single_file<'a, E: ByteOrder>(
 }
 
 /// Given an hff file, convert it into a decomposed table.
-fn hff_to_table<'a, E: ByteOrder>(
-    root: &Path,
-    file: PathBuf,
-    hff: Hff<StdReader>,
-    compression: &impl Fn(&Path) -> Option<u32>,
-) -> Result<TableBuilder<'a>> {
+fn hff_to_table<'a, E: ByteOrder>(file: PathBuf, hff: Hff<StdReader>) -> Result<TableBuilder<'a>> {
     // Create the metadata for the file.
     let mut ksv = Ksv::new();
     ksv.insert(

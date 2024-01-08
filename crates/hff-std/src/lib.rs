@@ -13,7 +13,7 @@ pub use hff_core::{
     read::{ChunkView, Hff, TableView},
     utilities,
     write::{chunk, hff, table, ChunkDesc, HffDesc, TableBuilder},
-    ByteOrder, ChunkCache, ContentInfo, Ecc, Error, Result, Version, NE, OP,
+    ByteOrder, ChunkCache, ContentInfo, Ecc, Error, Result, Version, BE, LE, NE, OP,
 };
 
 // Helper traits which provide blanket implementations over the
