@@ -1,6 +1,6 @@
 [package]
 name = "hff"
-version = "0.4.0"
+version = "0.4.2"
 edition = "2021"
 authors = ["All8Up <all8up@gmail.com>"]
 license-file = "LICENSE"
@@ -13,20 +13,21 @@ name = "hff"
 path = "./cmd/hff.rs"
 test = false
 bench = false
+required-features = ["compression"]
 
 [dependencies]
 # Core structure of Hff.
-hff-core = { version = "0.4.0" }
+hff-core = { version = "0.4.2" }
 thiserror = "1.0.51"
 
 # Synchronous version.  Always available.
-hff-std = { version = "0.4.0" }
+hff-std = { version = "0.4.2" }
 
 # Support for async-std.
-hff-async-std = { version = "0.4.0", optional = true }
+hff-async-std = { version = "0.4.2", optional = true }
 
 # Support for tokio.
-hff-tokio = { version = "0.4.0", optional = true }
+hff-tokio = { version = "0.4.2", optional = true }
 
 # Support for the tool requirements.
 clap = { version = "4.4.13", features = ["derive"] }

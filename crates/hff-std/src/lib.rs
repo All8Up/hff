@@ -12,7 +12,7 @@ pub use hff_core;
 pub use hff_core::{
     read::{ChunkView, Hff, TableView},
     utilities,
-    write::{chunk, hff, table, ChunkDesc, HffDesc, TableBuilder},
+    write::{chunk, hff, table, ChunkDesc, DataSource, HffDesc, TableBuilder},
     ByteOrder, ChunkCache, ContentInfo, Ecc, Error, Result, Version, BE, LE, NE, OP,
 };
 
