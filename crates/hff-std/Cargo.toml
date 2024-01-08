@@ -9,7 +9,7 @@ repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 
 [dependencies]
-hff-core = { path = "./../hff-core", version = "0.4.0" }
+hff-core = { path = "./../hff-core", version = "0.4.2" }
 
 # Support for compressed chunks.
 xz2 = { version = "0.1.7", optional = true }
