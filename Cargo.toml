@@ -6,7 +6,6 @@ members = [
     "./crates/hff-std",
     "./crates/hff-async-std",
     "./crates/hff-tokio",
-    "./crates/hff-dump",
     "./crates/hff-pack",
 ]
 
@@ -17,5 +16,4 @@ hff-core = { path = "./crates/hff-core" }
 hff-std = { path = "./crates/hff-std" }
 hff-async-std = { path = "./crates/hff-async-std" }
 hff-tokio = { path = "./crates/hff-tokio" }
-hff-dump = { path = "./crates/hff-dump" }
 hff-pack = { path = "./crates/hff-pack" }

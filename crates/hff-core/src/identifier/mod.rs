@@ -1,11 +1,20 @@
-use crate::{Ecc, Error, Result};
+//use crate::{Ecc, Error, Result};
 
 /// Identifier type.
+/// The file can specify the type used during creation
+/// if desired.  This does not change the behavior nor
+/// how things are matched, it is a utility for purposes
+/// of the use case being utilized.
 #[repr(u32)]
 pub enum IdType {
+    /// Pure numeric id's.
     Id = 0,
+    /// Dual eight character codes.
     Ecc = 1,
+    /// A UUID.
     Uuid = 2,
+    /// A 16 character code.
+    Scc = 3,
 }
 
 /// An identifier for the tables and chunks.
