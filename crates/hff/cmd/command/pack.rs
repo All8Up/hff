@@ -1,6 +1,8 @@
 use super::Result;
 use clap::Args;
 use hff_std::{hff, Ecc, Writer, BE, LE, NE};
+use log::trace;
+use normpath::PathExt;
 use std::{fs::File, io::Write, path::PathBuf};
 
 /// An archive entry.
@@ -31,7 +33,7 @@ pub struct Pack {
 
     /// Compression level for the content?
     #[arg(long, short)]
-    pub compression: Option<u32>,
+    pub compress: Option<u32>,
 
     /// Force big endian mode.
     #[arg(long, conflicts_with = "little_endian")]
@@ -45,14 +47,18 @@ impl Pack {
     /// Execute the subcommand.
     pub fn execute(self) -> Result<()> {
         use super::Structure;
+        let input = self.input.normalize()?;
+        let input: std::path::PathBuf = input.into();
 
         // Scan the structure of the input.
-        let structure = Structure::new(&self.input, self.recurse)?;
-        let parent = self.input.parent().unwrap();
+        let structure = Structure::new(&input, self.recurse)?;
+        let parent = input.parent().unwrap();
+        trace!("Input: {:?}", input);
+        trace!("Parent: {:?}", parent);
         let structure = structure.strip_prefix(parent)?;
 
         // Build up the tables for the structure.
-        let root = structure.to_tables::<NE>(parent, |_| self.compression)?;
+        let root = structure.to_tables::<NE>(parent, |_| self.compress)?;
 
         // Create a file to write the content into.
         let mut output = File::create(&self.output)?;

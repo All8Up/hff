@@ -62,7 +62,11 @@ impl<'a, T: Debug> TableView<'a, T> {
 
     /// Get an iterator to the child tables.
     pub fn iter(&self) -> TableIter<'a, T> {
-        TableIter::new(self.hff, self.index + 1)
+        if self.child_count() > 0 {
+            TableIter::new(self.hff, self.index + 1)
+        } else {
+            TableIter::empty(self.hff)
+        }
     }
 
     /// Get an iterator of the chunks.

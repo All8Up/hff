@@ -15,6 +15,25 @@ impl<'a, T: Debug> TableIter<'a, T> {
             index: Some(start),
         }
     }
+
+    /// Create an empty iterator.
+    pub fn empty(hff: &'a Hff<T>) -> Self {
+        Self { hff, index: None }
+    }
+
+    /// Create a table iterator for the child of the current table.
+    pub fn children(&self) -> Self {
+        if let Some(index) = &self.index {
+            if self.hff.tables_array()[*index].child_count() > 0 {
+                let next = *index + 1;
+                assert!(next < self.hff.tables_array().len());
+                return Self::new(self.hff, next);
+            }
+        }
+
+        // Nothing to iterate.
+        Self::empty(self.hff)
+    }
 }
 
 impl<'a, T: Debug> Iterator for TableIter<'a, T> {

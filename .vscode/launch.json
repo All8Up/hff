@@ -26,6 +26,43 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug executable 'hff'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=hff",
+                    "--package=hff"
+                ],
+                "filter": {
+                    "name": "hff",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'hff'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=hff",
+                    "--package=hff"
+                ],
+                "filter": {
+                    "name": "hff",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug unit tests in library 'hff-core'",
             "cargo": {
                 "args": [
@@ -94,85 +131,6 @@
                 "filter": {
                     "name": "hff-tokio",
                     "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug executable 'hff-dump'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=hff-dump",
-                    "--package=hff-dump"
-                ],
-                "filter": {
-                    "name": "hff-dump",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'hff-dump'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=hff-dump",
-                    "--package=hff-dump"
-                ],
-                "filter": {
-                    "name": "hff-dump",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug executable 'hff-pack'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=hff-pack",
-                    "--package=hff-pack"
-                ],
-                "filter": {
-                    "name": "hff-pack",
-                    "kind": "bin"
-                }
-            },
-            "args": [
-                "--input",
-                "./crates/hff",
-                "--output",
-                "test.hff"
-            ],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'hff-pack'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=hff-pack",
-                    "--package=hff-pack"
-                ],
-                "filter": {
-                    "name": "hff-pack",
-                    "kind": "bin"
                 }
             },
             "args": [],
