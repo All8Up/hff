@@ -1,6 +1,10 @@
 use super::Result;
 use clap::Args;
-use hff_core::{read::TableIter, utilities::Ksv, Error};
+use hff_core::{
+    read::TableIter,
+    utilities::{Ksv, StringVec},
+    Error,
+};
 use hff_std::{open, ContentInfo, Hff, StdReader, TableView};
 use log::trace;
 use normpath::PathExt;
@@ -69,12 +73,16 @@ impl Unpack {
             if hff.tables().count() == 1 {
                 // This is a single directory at the top.
                 // Just write out all the chunks to the output location.
-                self.unpack_level(0, &self.output, &hff, hff.tables());
+                let table = hff.tables().next().unwrap();
+                let data = Ksv::from_bytes(hff.get(&table)?.as_slice())?;
+                let names = &data["files"];
+                self.write_chunks(&hff, &self.output, names, &table)?;
+                self.unpack_level(0, &self.output, &hff, table.iter())?;
                 Ok(())
             } else {
-                // There are multiple top level entries, we'll
-                // create them as child directories and unpack the content
-                // there.
+                // There are multiple top level entries, so we just start
+                // unpacking.
+                self.unpack_level(0, &self.output, &hff, hff.tables())?;
                 Ok(())
             }
         } else {
@@ -102,8 +110,25 @@ impl Unpack {
             trace!("Child: {:?}", child_dir);
             create_dir_all(&child_dir)?;
 
-            // If there are chunks at this level, output them.
-            for (index, chunk) in table.chunks().into_iter().enumerate() {
+            // If there are chunks at this level, write them.
+            self.write_chunks(hff, &child_dir, names, &table)?;
+
+            // Recurse into the child.
+            self.unpack_level(depth + 1, &child_dir, hff, table.iter())?;
+        }
+        Ok(())
+    }
+
+    /// Write chunks.
+    fn write_chunks(
+        &self,
+        hff: &Hff<StdReader>,
+        path: &Path,
+        names: &StringVec,
+        table: &TableView<'_, StdReader>,
+    ) -> Result<()> {
+        for (index, chunk) in table.chunks().into_iter().enumerate() {
+            if chunk.primary() == super::HFF_FILE {
                 if chunk.secondary() == super::HFF_LZMA {
                     // Read from the chunk.
                     let reader: &mut dyn Read = &mut *hff.read(&chunk)?;
@@ -113,17 +138,16 @@ impl Unpack {
                     // Create a decompressor for the chunk.
                     let mut buffer = hff_std::decompress(&mut buffer.as_mut_slice())?;
 
-                    let mut output = File::create(child_dir.join(&names[index]))?;
+                    let mut output = File::create(path.join(&names[index]))?;
                     std::io::copy(&mut buffer.as_slice(), &mut output)?;
                 } else {
                     let reader: &mut dyn Read = &mut *hff.read(&chunk)?;
-                    let mut output = File::create(child_dir.join(&names[index]))?;
+                    let mut output = File::create(path.join(&names[index]))?;
                     std::io::copy(reader, &mut output)?;
                 }
+            } else {
+                unimplemented!()
             }
-
-            // Recurse into the child.
-            self.unpack_level(depth + 1, &child_dir, hff, table.iter())?;
         }
         Ok(())
     }
