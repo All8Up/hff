@@ -1,0 +1,129 @@
+//------------------------------------------------
+//--- 010 Editor v14.0 Binary Template
+//
+//      File: HFF container type.
+//   Authors: All8Up
+//   Version: 0.5
+//   Purpose: Container type somewhat like IFF with hierarchical organization.
+//  Category: Container
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+#ifndef HFF_TYPES_H
+#define HFF_TYPES_H
+
+// Typedef for the Ecc data type.
+typedef char ECC[8];
+
+// Version information.
+typedef struct Version {
+    uint16 major;
+    uint16 minor;
+};
+
+typedef struct HffMagic {
+    // Magic value to identify the file.
+    ECC magic;
+
+    // Determine the endianness of the file.
+    if (magic == "HFF-2023") {
+        LittleEndian();
+    } else if (magic != "2320F-HF") {
+        // The file is BigEndian.
+        BigEndian();
+    } else {
+        Printf("Not an HFF file.");
+        Exit(1);
+    }
+};
+
+// HffHeader
+typedef struct HffHeader {
+    // A magic value placed at the top of the file to indicate this is an HFF file.
+    HffMagic magic;
+    // The version of the overall file format.
+    Version version;
+    // Identification type in use.
+    uint32 id_type;
+    // Content type identification.
+    ECC content_type;
+    // The number of tables in the file.
+    uint32 table_count;
+    // The number of chunks in the file.
+    uint32 chunk_count;
+};
+
+// HffTableEntry
+typedef struct HffTableEntry {
+    // Primary type.
+    ECC primary;
+    // Secondary type.
+    ECC secondary;
+    // Length of the metadata content for this table.
+    uint64 metadata_length;
+    // The offset into the file where the metadata content exists.
+    uint64 metadata_offset;
+    // The count of children.
+    uint32 child_count;
+    // The index of this tables sibling.
+    uint32 sibling_index;
+    // The starting index for chunks owned by this table.
+    uint32 chunk_index;
+    // The number of chunks owned by this table.
+    uint32 chunk_count;
+    
+    if (metadata_length > 0) {
+        local int64 start = FTell();
+        FSeek(metadata_offset);
+        byte metadata[metadata_length];
+        FSeek(start);
+    }
+};
+
+// HffChunkEntry
+typedef struct HffChunkEntry {
+    // The primary type of this chunk.
+    ECC primary;
+    // The secondary type of this chunk.
+    ECC secondary;
+    // The byte length of the chunk data.
+    uint64 chunk_length;
+    // The offset within the file where the chunk content exists.
+    uint64 chunk_offset;
+    
+    // The chunk data itself.
+    local int64 start = FTell();
+    FSeek(chunk_offset);
+    byte data[chunk_length];
+    FSeek(start);
+};
+
+// Process the hff file.
+SetBackColor( cLtGray );
+HffHeader file_header;
+
+// The array of table entries.
+local int i;
+
+// The table entries.
+for (i = 0; i < file_header.table_count; ++i) {
+    if ((i&1) == 0) {
+        SetBackColor( cLtBlue );
+    } else {
+        SetBackColor( cBlue );
+    }
+    HffTableEntry table;
+}
+
+// The array of chunk entries.
+for (i = 0; i < file_header.chunk_count; ++i) {
+    if ((i&1) == 0) {
+        SetBackColor( cLtYellow );
+    } else {
+        SetBackColor( cDkYellow );
+    }
+    HffChunkEntry chunk;
+}
+
+#endif
