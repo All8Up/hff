@@ -17,17 +17,17 @@ required-features = ["compression"]
 
 [dependencies]
 # Core structure of Hff.
-hff-core = { version = "0.5.3" }
+hff-core = { version = "0.5.4" }
 thiserror = "1.0.51"
 
 # Synchronous version.  Always available.
-hff-std = { version = "0.5.3" }
+hff-std = { version = "0.5.4" }
 
 # Support for async-std.
-hff-async-std = { version = "0.5.3", optional = true }
+hff-async-std = { version = "0.5.4", optional = true }
 
 # Support for tokio.
-hff-tokio = { version = "0.5.3", optional = true }
+hff-tokio = { version = "0.5.4", optional = true }
 
 # Support for the tool requirements.
 clap = { version = "4.4.13", features = ["derive"] }

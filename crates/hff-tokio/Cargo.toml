@@ -9,8 +9,8 @@ repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 
 [dependencies]
-hff-core = { version = "0.5.3" }
-hff-std = { version = "0.5.3" }
+hff-core = { version = "0.5.4" }
+hff-std = { version = "0.5.4" }
 async-trait = { version = "0.1.75" }
 
 # Support for tokio.
