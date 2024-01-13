@@ -1,5 +1,5 @@
 use hff_std::hff_core::write::ChunkDesc;
-use hff_std::utilities::{Ksv, StringVec};
+use hff_std::utilities::Hierarchical;
 use hff_std::*;
 use std::{
     fs::{read_dir, File},
@@ -106,25 +106,13 @@ fn archive_directory<'a, E: ByteOrder>(
     structure: Vec<Structure>,
     compression: &impl Fn(&Path) -> Option<u32>,
 ) -> Result<TableBuilder<'a>> {
-    // The metadata attached to this table will describe the names
-    // of the directory and the files which are stored in the chunks.
-    let mut ksv = Ksv::new();
-
-    // Insert the path of the root directory for everything we find.
-    // This is just the name and not the full path.
-    ksv.insert(
-        "dir".into(),
-        [path.display().to_string()].into_iter().into(),
-    );
-
     // Build children tables and chunks.
-    let (tables, chunks, files) = archive_level::<E>(root, path, structure, compression)?;
-    // Insert the file names into the metadata.
-    ksv.insert("files".into(), files.into_iter().into());
+    let (tables, chunks, files, hierarchy) =
+        archive_level::<E>(root, path.clone(), structure, compression)?;
 
     // And build the outer table for this level.
     Ok(table(super::HFF_DIR, Ecc::INVALID)
-        .metadata(ksv.to_bytes::<E>()?)?
+        .metadata(Hierarchical::new(path.display().to_string(), files, hierarchy).to_bytes::<E>()?)?
         .children(tables)
         .chunks(chunks))
 }
@@ -134,22 +122,17 @@ fn archive_level<'a, E: ByteOrder>(
     path: PathBuf,
     children: Vec<Structure>,
     compression: &impl Fn(&Path) -> Option<u32>,
-) -> Result<(Vec<TableBuilder<'a>>, Vec<ChunkDesc<'a>>, Vec<String>)> {
-    // The metadata attached to this table will describe the names
-    // of the directory and the files which are stored in the chunks.
-    let mut ksv = Ksv::new();
-
-    // Insert the path of the root directory for everything we find.
-    // This is just the name and not the full path.
-    ksv.insert(
-        "dir".into(),
-        [path.display().to_string()].into_iter().into(),
-    );
-
+) -> Result<(
+    Vec<TableBuilder<'a>>,
+    Vec<ChunkDesc<'a>>,
+    Vec<String>,
+    Vec<Hierarchical>,
+)> {
     // Build children tables and chunks.
     let mut tables = vec![];
     let mut chunks = vec![];
     let mut files = vec![];
+    let mut hierarchy = vec![];
 
     for child in children {
         match child {
@@ -162,25 +145,18 @@ fn archive_level<'a, E: ByteOrder>(
             }
             Structure::Directory(p, c) => {
                 let root = root.join(&path);
-
-                let mut ksv = Ksv::new();
-                ksv.insert("dir".into(), [p.display().to_string()].into_iter().into());
-                let (t, c, f) = archive_level::<E>(&root, p, c, compression)?;
-
-                // Insert the file names into the metadata.
-                ksv.insert("files".into(), f.into_iter().into());
-
+                let (t, c, f, h) = archive_level::<E>(&root, p.clone(), c, compression)?;
+                hierarchy.push(Hierarchical::new(p.display().to_string(), f, h));
                 tables.push(
                     table(super::HFF_DIR, Ecc::INVALID)
                         .children(t.into_iter())
-                        .chunks(c.into_iter())
-                        .metadata(ksv.to_bytes::<E>()?)?,
+                        .chunks(c.into_iter()),
                 )
             }
         }
     }
 
-    Ok((tables, chunks, files))
+    Ok((tables, chunks, files, hierarchy))
 }
 
 /// Given a single file, turn it into a table entry.
@@ -193,13 +169,6 @@ fn archive_single_file<'a, E: ByteOrder>(
     // Build the path to the file.
     let file_path = root.join(&file);
 
-    // Create the metadata for the file.
-    let mut ksv = Ksv::new();
-    ksv.insert(
-        "file".into(),
-        StringVec::from([file.display().to_string()].into_iter()),
-    );
-
     // Attempt to open the file as an hff first.
     match hff_std::open(File::open(&file_path)?) {
         Ok(hff) => Ok(hff_to_table::<E>(file, hff)?),
@@ -209,20 +178,16 @@ fn archive_single_file<'a, E: ByteOrder>(
             let chunk = file_to_chunk(compression, file_path)?;
             Ok(table(super::HFF_FILE, Ecc::INVALID)
                 .chunks([chunk])
-                .metadata(ksv.to_bytes::<E>()?)?)
+                .metadata(
+                    Hierarchical::new(file.display().to_string(), vec![], vec![])
+                        .to_bytes::<E>()?,
+                )?)
         }
     }
 }
 
 /// Given an hff file, convert it into a decomposed table.
 fn hff_to_table<'a, E: ByteOrder>(file: PathBuf, hff: Hff<StdReader>) -> Result<TableBuilder<'a>> {
-    // Create the metadata for the file.
-    let mut ksv = Ksv::new();
-    ksv.insert(
-        "file".into(),
-        StringVec::from([file.display().to_string()].into_iter()),
-    );
-
     // Convert content for embedding.
     let mut children = vec![];
     for t in hff.tables() {
@@ -233,7 +198,7 @@ fn hff_to_table<'a, E: ByteOrder>(file: PathBuf, hff: Hff<StdReader>) -> Result<
     // At the root level of an hff, it can only contain tables, so
     // this new table has no chunks, only the original children tables.
     let result = table(super::HFF_EMBEDDED, hff.content_type())
-        .metadata(ksv.to_bytes::<E>()?)?
+        .metadata(Hierarchical::new(file.display().to_string(), vec![], vec![]).to_bytes::<E>()?)?
         .children(children.into_iter());
 
     Ok(result)

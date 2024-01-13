@@ -1,16 +1,11 @@
 use super::Result;
 use clap::Args;
-use hff_core::{
-    read::TableIter,
-    utilities::{Ksv, StringVec},
-    Error,
-};
+use hff_core::{read::TableIter, utilities::Hierarchical, Error};
 use hff_std::{open, ContentInfo, Hff, StdReader, TableView};
 use log::trace;
-use normpath::PathExt;
 use std::{
     fs::{create_dir_all, File},
-    io::{Read, Write},
+    io::Read,
     path::{Path, PathBuf},
 };
 
@@ -66,24 +61,17 @@ impl Unpack {
             // Make sure it exists and then proceed.
             create_dir_all(&self.output)?;
 
-            // If the top level of the tables is a single table,
-            // we are going to ignore it's name and just dump the
-            // files and then recurse into the children.  Otherwise
-            // we'll be using all the top level entries.
+            // There can be only one top level if there are multiple files.
             if hff.tables().count() == 1 {
                 // This is a single directory at the top.
                 // Just write out all the chunks to the output location.
                 let table = hff.tables().next().unwrap();
-                let data = Ksv::from_bytes(hff.get(&table)?.as_slice())?;
-                let names = &data["files"];
-                self.write_chunks(&hff, &self.output, names, &table)?;
-                self.unpack_level(0, &self.output, &hff, table.iter())?;
+                let hierarchy = Hierarchical::from_bytes(hff.get(&table)?.as_slice())?;
+                self.write_chunks(&hff, &self.output, hierarchy.content(), &table)?;
+                self.unpack_level(0, &self.output, &hff, table.iter(), hierarchy.children())?;
                 Ok(())
             } else {
-                // There are multiple top level entries, so we just start
-                // unpacking.
-                self.unpack_level(0, &self.output, &hff, hff.tables())?;
-                Ok(())
+                Err(Error::Invalid(format!("Invalid structure.")))
             }
         } else {
             Err(Error::Invalid(format!("Output invalid: {:?}", self.output)))
@@ -97,13 +85,12 @@ impl Unpack {
         location: &Path,
         hff: &Hff<StdReader>,
         level: TableIter<'_, StdReader>,
+        hierarchy: &[Hierarchical],
     ) -> Result<()> {
         // Iterate the tables.
-        for table in level {
-            // Get the metadata as a Ksv.
-            let data = Ksv::from_bytes(hff.get(&table)?.as_slice())?;
-            let dir = &data["dir"][0];
-            let names = &data["files"];
+        for (table, desc) in level.zip(hierarchy.iter()) {
+            let dir = desc.key();
+            let names = desc.content();
 
             // Create a directory for the child.
             let child_dir = location.join(dir);
@@ -114,7 +101,7 @@ impl Unpack {
             self.write_chunks(hff, &child_dir, names, &table)?;
 
             // Recurse into the child.
-            self.unpack_level(depth + 1, &child_dir, hff, table.iter())?;
+            self.unpack_level(depth + 1, &child_dir, hff, table.iter(), desc.children())?;
         }
         Ok(())
     }
@@ -124,7 +111,7 @@ impl Unpack {
         &self,
         hff: &Hff<StdReader>,
         path: &Path,
-        names: &StringVec,
+        names: &[String],
         table: &TableView<'_, StdReader>,
     ) -> Result<()> {
         for (index, chunk) in table.chunks().into_iter().enumerate() {
@@ -136,7 +123,7 @@ impl Unpack {
                     reader.read_exact(&mut buffer)?;
 
                     // Create a decompressor for the chunk.
-                    let mut buffer = hff_std::decompress(&mut buffer.as_mut_slice())?;
+                    let buffer = hff_std::decompress(&mut buffer.as_mut_slice())?;
 
                     let mut output = File::create(path.join(&names[index]))?;
                     std::io::copy(&mut buffer.as_slice(), &mut output)?;
@@ -153,12 +140,12 @@ impl Unpack {
     }
 
     /// Unpack a hff file.
-    fn unpack_file(&self, hff: Hff<StdReader>) -> Result<()> {
+    fn unpack_file(&self, _hff: Hff<StdReader>) -> Result<()> {
         Ok(())
     }
 
     /// Unpack a hff file that has been singularly archived.
-    fn unpack_hff(&self, hff: Hff<StdReader>) -> Result<()> {
+    fn unpack_hff(&self, _hff: Hff<StdReader>) -> Result<()> {
         Ok(())
     }
 }

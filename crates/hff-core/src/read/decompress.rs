@@ -1,5 +1,4 @@
-use crate::{ContentInfo, Result};
-use std::io::Read;
+use crate::Result;
 
 /// Decompress the provided data.
 #[cfg(feature = "compression")]

@@ -6,3 +6,6 @@ pub use string_vec::StringVec;
 
 mod ksv;
 pub use ksv::Ksv;
+
+mod hierarchical;
+pub use hierarchical::Hierarchical;
