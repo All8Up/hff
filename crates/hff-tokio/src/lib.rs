@@ -1,11 +1,12 @@
-// Reexport needed types.
-#[cfg(feature = "compression")]
-pub use hff_core::read::decompress;
+// Pull in core if special behavior is needed.
+pub use hff_core;
 
+// Pull in common needs.  Aka: prelude.
 pub use hff_core::{
     read::{ChunkView, Hff, TableView},
-    write::{chunk, hff, table, HffDesc},
-    ChunkCache, Ecc, Result, NE, OP,
+    utilities,
+    write::{chunk, hff, table, ChunkDesc, DataSource, HffDesc, TableBuilder},
+    ByteOrder, ChunkCache, ContentInfo, Ecc, Error, Result, Version, BE, LE, NE, OP,
 };
 
 mod read;
