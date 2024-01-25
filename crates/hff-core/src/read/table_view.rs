@@ -26,7 +26,7 @@ impl<'a, T: Debug> ContentInfo for TableView<'a, T> {
 
 impl<'a, T: Debug> TableView<'a, T> {
     /// Create a new TableView.
-    pub(super) fn new(hff: &'a Hff<T>, index: usize) -> Self {
+    pub fn new(hff: &'a Hff<T>, index: usize) -> Self {
         Self { hff, index }
     }
 
