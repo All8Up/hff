@@ -16,6 +16,20 @@
 // Typedef for the Ecc data type.
 typedef char ECC[8];
 
+// Identifier type.
+typedef struct Identifier {
+    uint64 upper;
+    uint64 lower;
+};
+
+// Identifier types.
+const uint32 ID = 0;
+const uint32 ECC_2 = 1;
+const uint32 UUIID = 2;
+const uint32 Au8 = 3;
+const uint32 EccU64 = 4;
+const uint32 U64S = 5;
+
 // Version information.
 typedef struct Version {
     uint16 major;
@@ -56,10 +70,8 @@ typedef struct HffHeader {
 
 // HffTableEntry
 typedef struct HffTableEntry {
-    // Primary type.
-    ECC primary;
-    // Secondary type.
-    ECC secondary;
+    // Identifier.
+    Identifier identifier;
     // Length of the metadata content for this table.
     uint64 metadata_length;
     // The offset into the file where the metadata content exists.
@@ -83,10 +95,8 @@ typedef struct HffTableEntry {
 
 // HffChunkEntry
 typedef struct HffChunkEntry {
-    // The primary type of this chunk.
-    ECC primary;
-    // The secondary type of this chunk.
-    ECC secondary;
+    // Identifier.
+    Identifier identifier;
     // The byte length of the chunk data.
     uint64 chunk_length;
     // The offset within the file where the chunk content exists.
