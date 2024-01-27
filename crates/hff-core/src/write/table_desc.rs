@@ -59,7 +59,7 @@ impl<'a> TableDesc<'a> {
         // Second, push the chunks for this table into the chunk and data arrays.
         for chunk in self.chunks {
             // Push without offset/length, we don't know them at this time.
-            chunks.push(Chunk::new(chunk.primary(), chunk.secondary(), 0, 0));
+            chunks.push(Chunk::new((chunk.primary(), chunk.secondary()), 0, 0));
             data.push(chunk.data_source());
         }
 

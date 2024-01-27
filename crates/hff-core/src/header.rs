@@ -90,8 +90,8 @@ impl Header {
     }
 
     /// Identifier type.
-    pub fn id_type(&self) -> u32 {
-        self.id_type
+    pub fn id_type(&self) -> IdType {
+        self.id_type.into()
     }
 
     /// What's the endian?

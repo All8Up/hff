@@ -1,5 +1,5 @@
 use super::Hff;
-use crate::{ContentInfo, Ecc};
+use crate::{ContentInfo, Identifier};
 use std::fmt::Debug;
 
 /// A view to a chunk.
@@ -31,14 +31,9 @@ impl<'a, T: Debug> ChunkView<'a, T> {
         self.index
     }
 
-    /// Get the primary identifier.
-    pub fn primary(&self) -> Ecc {
-        self.hff.chunks_array()[self.index].primary()
-    }
-
-    /// Get the secondary identifier.
-    pub fn secondary(&self) -> Ecc {
-        self.hff.chunks_array()[self.index].secondary()
+    /// Get the identifier.
+    pub fn identifier(&self) -> Identifier {
+        self.hff.chunks_array()[self.index].identifier()
     }
 
     /// Get the size of the data in the chunk.

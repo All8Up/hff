@@ -187,8 +187,9 @@ mod tests {
             ];
             for (index, chunk) in root.chunks().enumerate() {
                 let test_entry = test_data[index];
-                assert_eq!(Ecc::new(test_entry.0), chunk.primary());
-                assert_eq!(Ecc::new(test_entry.1), chunk.secondary());
+                let (primary, secondary): (Ecc, Ecc) = chunk.identifier().into();
+                assert_eq!(Ecc::new(test_entry.0), primary);
+                assert_eq!(Ecc::new(test_entry.1), secondary);
 
                 #[cfg(feature = "compression")]
                 if chunk.secondary() == Ecc::new("TRS5") {
