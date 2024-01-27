@@ -13,8 +13,8 @@ pub enum IdType {
     Ecc2 = 1,
     /// A UUID.
     Uuid = 2,
-    /// A 16 character code.
-    Scc = 3,
+    /// An array of u8.
+    Au8 = 3,
     /// An eight character code and a u64.
     EccU64 = 4,
     /// Two u64's.
@@ -29,7 +29,7 @@ impl Deref for IdType {
             Self::Id => &0,
             Self::Ecc2 => &1,
             Self::Uuid => &2,
-            Self::Scc => &3,
+            Self::Au8 => &3,
             Self::EccU64 => &4,
             Self::U64s => &5,
         }
@@ -42,7 +42,7 @@ impl From<u32> for IdType {
             0 => Self::Id,
             1 => Self::Ecc2,
             2 => Self::Uuid,
-            3 => Self::Scc,
+            3 => Self::Au8,
             4 => Self::EccU64,
             5 => Self::U64s,
             _ => panic!("Invalid identifier type in header."),
@@ -55,6 +55,9 @@ impl From<u32> for IdType {
 pub struct Identifier(u128);
 
 impl Identifier {
+    /// An invalid identifier.
+    pub const INVALID: Self = Self(0);
+
     /// Create a new instance.
     pub fn new(id: u128) -> Self {
         Self(id)
@@ -78,8 +81,8 @@ impl Identifier {
         Uuid::from_u128(self.0)
     }
 
-    /// Convert to a 16 character code.  (AKA: [u8; 16] right now.)
-    pub fn as_scc(self) -> [u8; 16] {
+    /// Convert to an array of u8.
+    pub fn as_au8(self) -> [u8; 16] {
         #[cfg(target_endian = "little")]
         {
             self.0.to_le_bytes()
@@ -132,7 +135,7 @@ impl Into<Uuid> for Identifier {
 
 impl Into<[u8; 16]> for Identifier {
     fn into(self) -> [u8; 16] {
-        self.as_scc()
+        self.as_au8()
     }
 }
 
@@ -151,71 +154,57 @@ impl Into<(u64, u64)> for Identifier {
 // Several infallible conversions first.
 
 // For IdType::Id
-impl TryFrom<u128> for Identifier {
-    type Error = Error;
-
-    fn try_from(value: u128) -> Result<Self> {
-        Ok(Self(value))
+impl From<u128> for Identifier {
+    fn from(value: u128) -> Self {
+        Self(value)
     }
 }
 
 // For IdType::Ecc2
-impl TryFrom<(Ecc, Ecc)> for Identifier {
-    type Error = Error;
-
-    fn try_from(value: (Ecc, Ecc)) -> Result<Self> {
+impl From<(Ecc, Ecc)> for Identifier {
+    fn from(value: (Ecc, Ecc)) -> Self {
         let primary: u64 = *value.0;
         let secondary: u64 = *value.1;
         let value = (primary as u128) << 64 | (secondary as u128);
-        Ok(Self(value))
+        Self(value)
     }
 }
 
 // For IdType::Uuid
-impl TryFrom<Uuid> for Identifier {
-    type Error = Error;
-
-    fn try_from(value: Uuid) -> Result<Self> {
-        Ok(Self(value.as_u128()))
+impl From<Uuid> for Identifier {
+    fn from(value: Uuid) -> Self {
+        Self(value.as_u128())
     }
 }
 
 // For IdType::Scc
-impl TryFrom<[u8; 16]> for Identifier {
-    type Error = Error;
-
-    fn try_from(value: [u8; 16]) -> Result<Self> {
+impl From<[u8; 16]> for Identifier {
+    fn from(value: [u8; 16]) -> Self {
         #[cfg(target_endian = "little")]
         let value = u128::from_le_bytes(value);
         #[cfg(target_endian = "big")]
         let value = u128::from_be_bytes(value);
 
-        Ok(Self(value))
+        Self(value)
     }
 }
 
 // For IdType::EccU64
-impl TryFrom<(Ecc, u64)> for Identifier {
-    type Error = Error;
-
-    fn try_from(value: (Ecc, u64)) -> Result<Self> {
+impl From<(Ecc, u64)> for Identifier {
+    fn from(value: (Ecc, u64)) -> Self {
         let ecc: u64 = *value.0;
         let value = (ecc as u128) << 64 | (value.1 as u128);
-        Ok(Self(value))
+        Self(value)
     }
 }
 
 // For IdType::U64s
-impl TryFrom<(u64, u64)> for Identifier {
-    type Error = Error;
-
-    fn try_from(value: (u64, u64)) -> Result<Self> {
+impl From<(u64, u64)> for Identifier {
+    fn from(value: (u64, u64)) -> Self {
         let value = (value.0 as u128) << 64 | (value.1 as u128);
-        Ok(Self(value))
+        Self(value)
     }
 }
-
-// Some helper conversions for ease of use.  These are actually fallible.
 
 impl TryFrom<(&str, &str)> for Identifier {
     type Error = Error;

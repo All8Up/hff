@@ -44,35 +44,35 @@ mod tests {
 
     fn test_table<'a>() -> Result<HffDesc<'a>> {
         Ok(hff([
-            table("Test", "TestSub")
+            table((Ecc::new("Test"), Ecc::new("TestSub")))
             .metadata("This is some metadata attached to the table.")?
             .chunks([
-                chunk("TRC0", "TRS0", "Chunks can be most types.  This is passed as an arbitrary byte array.".as_bytes())?,
+                chunk((Ecc::new("TRC0"), Ecc::new("TRS0")), "Chunks can be most types.  This is passed as an arbitrary byte array.".as_bytes())?,
                 chunk(
-                    "TRC1",
-                    "TRS1",
+                    (Ecc::new("TRC1"),
+                    Ecc::new("TRS1")),
                     "Chunks provided to the table will maintain their order.",
                 )?,
                 chunk(
-                    "TRC2",
-                    "TRS2",
+                    (Ecc::new("TRC2"),
+                    Ecc::new("TRS2")),
                     "So, iterating through the chunks has the same order as presented here.",
                 )?,
                 chunk(
-                    "TRC3",
-                    "TRS3",
+                    (Ecc::new("TRC3"),
+                    Ecc::new("TRS3")),
                     "Chunks can be supplied with data from multiple sources.",
                 )?,
                 chunk(
-                    "TRC4",
-                    "TRS4",
+                    (Ecc::new("TRC4"),
+                    Ecc::new("TRS4")),
                     "In fact, providing a std::path::Path will pull the content of a file in as the chunk data.",
                 )?,
                 // Compress the string if compression is enabled.
                 #[cfg(feature = "compression")]
                 chunk(
-                    "TRC5",
-                    "TRS5",
+                    (Ecc::new("TRC5"),
+                    Ecc::new("TRS5")),
                     // Compressing chunks is just sending in a tuple with the compression level.
                     // Using lzma for compression and the level is expected to be between 0 and 9.
                     (9, "In the case of a lazy_write, the file will be opened and streamed directly to the writer without being buffered in memory."),
@@ -80,34 +80,34 @@ mod tests {
                 // Don't compress the string if compression is disabled.
                 #[cfg(not(feature = "compression"))]
                 chunk(
-                    "TRC5",
-                    "TRS5",
+                    (Ecc::new("TRC5"),
+                    Ecc::new("TRS5")),
                     "In the case of a lazy_write, the file will be opened and streamed directly to the writer without being buffered in memory.",
                 )?,
             ])
             .children([
-                table("C0Prime", "C0Sub")
+                table((Ecc::new("C0Prime"), Ecc::new("C0Sub")))
                 .metadata("Each table has its own metadata.")?
-                .chunks([chunk("C0C0", "C0S0", "Each table also has its own set of chunks.")?])
+                .chunks([chunk((Ecc::new("C0C0"), Ecc::new("C0S0")), "Each table also has its own set of chunks.")?])
                 .children([
-                    table("C1Prime", "C1Sub")
+                    table((Ecc::new("C1Prime"), Ecc::new("C1Sub")))
                     .chunks([
                         chunk(
-                            "C1C0",
-                            "C1S0",
+                            (Ecc::new("C1C0"),
+                            Ecc::new("C1S0")),
                             "They will only be listed while iterating that specific table.",
                         )?
                     ]),
-                    table("C2Prime", "C2Sub")
+                    table((Ecc::new("C2Prime"), Ecc::new("C2Sub")))
                     .children([
-                        table("C3Prime", "C3Sub")
+                        table((Ecc::new("C3Prime"), Ecc::new("C3Sub")))
                         .chunks([
-                            chunk("C2C0", "C2S0", "Tables don't *have* to have chunks, tables can be used to simply contain other tables.")?
+                            chunk((Ecc::new("C2C0"), Ecc::new("C2S0")), "Tables don't *have* to have chunks, tables can be used to simply contain other tables.")?
                         ])
                     ])
                 ]),
-                table("C4Prime", "C4Sub").chunks([
-                    chunk("C4C0", "C4S0","The last chunk in the overall file.")?
+                table((Ecc::new("C4Prime"), Ecc::new("C4Sub"))).chunks([
+                    chunk((Ecc::new("C4C0"), Ecc::new("C4S0")),"The last chunk in the overall file.")?
                 ])
                 .metadata("And we're done.")?
             ])
@@ -118,17 +118,19 @@ mod tests {
         {
             // Check the content of root is as expected.
             let root = hff.tables().next().unwrap();
-            assert_eq!(root.primary(), "Test".into());
-            assert_eq!(root.secondary(), "TestSub".into());
+            assert_eq!(
+                root.identifier(),
+                (Ecc::new("Test"), Ecc::new("TestSub")).into()
+            );
             assert_eq!(root.child_count(), 2);
             assert_eq!(root.chunk_count(), 6);
 
             // Check that we get a proper child iterator from the root.
             let mut root_children = root.iter();
             let c0 = root_children.next().unwrap();
-            assert_eq!(c0.primary(), "C0Prime".into());
+            assert_eq!(c0.identifier().as_ecc2().0, "C0Prime".into());
             let c4 = root_children.next().unwrap();
-            assert_eq!(c4.primary(), "C4Prime".into());
+            assert_eq!(c4.identifier().as_ecc2().0, "C4Prime".into());
             assert!(root_children.next().is_none());
         }
 
@@ -225,8 +227,10 @@ mod tests {
                 // Test depth first iteration.
                 for ((depth, table), data) in hff.depth_first().zip(test_data.iter()) {
                     assert_eq!(depth, data.0);
-                    assert_eq!(table.primary(), data.1.into());
-                    assert_eq!(table.secondary(), data.2.into());
+                    assert_eq!(
+                        table.identifier(),
+                        (Ecc::new(data.1), Ecc::new(data.2)).into()
+                    );
                 }
             }
         }

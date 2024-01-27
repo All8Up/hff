@@ -1,35 +1,24 @@
 use super::DataSource;
-use crate::Ecc;
+use crate::Identifier;
 
 /// An intermediate chunk description.
 #[derive(Debug)]
 pub struct ChunkDesc<'a> {
-    /// The primary identifier.
-    primary: Ecc,
-    /// The secondary identifier.
-    secondary: Ecc,
+    /// The identifier.
+    identifier: Identifier,
     /// The source of the chunk data.
     data: DataSource<'a>,
 }
 
 impl<'a> ChunkDesc<'a> {
     /// Create a new chunk desc.
-    pub fn new(primary: Ecc, secondary: Ecc, data: DataSource<'a>) -> Self {
-        Self {
-            primary,
-            secondary,
-            data,
-        }
+    pub fn new(identifier: Identifier, data: DataSource<'a>) -> Self {
+        Self { identifier, data }
     }
 
-    /// Get the primary identifier.
-    pub fn primary(&self) -> Ecc {
-        self.primary
-    }
-
-    /// Get the secondary identifier.
-    pub fn secondary(&self) -> Ecc {
-        self.secondary
+    /// Get the chunk identifier.
+    pub fn identifier(&self) -> Identifier {
+        self.identifier
     }
 
     /// Take chunk and return the data source.

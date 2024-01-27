@@ -7,23 +7,23 @@
 //!
 //! // Creating the content can use the builder:
 //! let content = hff([
-//!     table("Prime", "Second")
+//!     table((Ecc::new("Prime"), Ecc::new("Second")))
 //!     // Metadata and chunks can be pulled from many types of source data.
 //!     .metadata("Each table can have metadata.").unwrap()
 //!     // Tables can have chunks.
 //!     .chunks([
-//!         chunk("AChunk", Ecc::INVALID, "Each table can have 0..n chunks of data.").unwrap()
+//!         chunk((Ecc::new("AChunk"), Ecc::INVALID), "Each table can have 0..n chunks of data.").unwrap()
 //!     ])
 //!     // Tables can have child tables.
 //!     .children([
-//!         table("Child1", Ecc::INVALID)
+//!         table((Ecc::new("Child1"), Ecc::INVALID))
 //!         .metadata("Unique to this table.").unwrap()
 //!         .chunks([
-//!             chunk("ThisFile", "Copy", "more data").unwrap()
+//!             chunk((Ecc::new("ThisFile"), Ecc::new("Copy")), "more data").unwrap()
 //!         ])
 //!     ]),
 //!     // And there can be multiple tables at the root.
-//!     table("Child2", Ecc::INVALID)
+//!     table((Ecc::new("Child2"), Ecc::INVALID))
 //! ]);
 //!
 //! // The results can be packaged into an output stream.
@@ -45,7 +45,7 @@
 //!     let metadata = hff.read(&table).unwrap_or(&[0; 0]);
 //!     println!("{}: {:?} ({})",
 //!         depth,
-//!         table.primary(),
+//!         table.identifier(),
 //!         std::str::from_utf8(metadata).unwrap()
 //!     );
 //!

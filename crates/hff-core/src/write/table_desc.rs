@@ -1,13 +1,11 @@
 use super::{ChunkArray, ChunkDesc, DataArray, DataSource, TableArray};
-use crate::{Chunk, Ecc, Table};
+use crate::{Chunk, Identifier, Table};
 
 /// Description of a table.
 #[derive(Debug)]
 pub struct TableDesc<'a> {
-    /// The primary identifier.
-    primary: Ecc,
-    /// The secondary identifier.
-    secondary: Ecc,
+    /// The table identifier.
+    identifier: Identifier,
     /// The metadata for the table.
     metadata: Option<DataSource<'a>>,
     /// The chunks attached to the table.
@@ -19,15 +17,13 @@ pub struct TableDesc<'a> {
 impl<'a> TableDesc<'a> {
     /// Create a new table description.
     pub fn new(
-        primary: Ecc,
-        secondary: Ecc,
+        identifier: Identifier,
         metadata: Option<DataSource<'a>>,
         chunks: Vec<ChunkDesc<'a>>,
         children: Vec<TableDesc<'a>>,
     ) -> Self {
         Self {
-            primary,
-            secondary,
+            identifier,
             metadata,
             chunks,
             children,
@@ -59,7 +55,7 @@ impl<'a> TableDesc<'a> {
         // Second, push the chunks for this table into the chunk and data arrays.
         for chunk in self.chunks {
             // Push without offset/length, we don't know them at this time.
-            chunks.push(Chunk::new((chunk.primary(), chunk.secondary()), 0, 0));
+            chunks.push(Chunk::new(chunk.identifier(), 0, 0));
             data.push(chunk.data_source());
         }
 
@@ -71,8 +67,7 @@ impl<'a> TableDesc<'a> {
         tables.push(
             had_metadata,
             Table::create()
-                .primary(self.primary)
-                .secondary(self.secondary)
+                .identifier(self.identifier)
                 .chunk_index(if chunk_count > 0 {
                     chunk_start as u32
                 } else {

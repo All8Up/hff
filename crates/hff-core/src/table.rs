@@ -1,4 +1,4 @@
-use crate::{Ecc, Result};
+use crate::{Identifier, Result};
 use byteorder::{ByteOrder, ReadBytesExt, WriteBytesExt};
 use std::{
     fmt::Debug,
@@ -10,10 +10,8 @@ use std::{
 #[repr(C, align(16))]
 #[derive(Copy, Eq, PartialEq, Clone, Hash)]
 pub struct Table {
-    /// The primary content type of the table.
-    primary: Ecc,
-    /// The secondary content type of the table.
-    secondary: Ecc,
+    /// The table identifier.
+    identifier: Identifier,
     /// Length of the metadata optionally attached to this table.
     metadata_length: u64,
     /// Absolute offset to the metadata content.
@@ -33,9 +31,8 @@ impl Debug for Table {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "(\"{}\":\"{}\"): meta \"{}:{}\", sib: {}, children: {}, chunks(count: {}, index: {})",
-            self.primary.to_string(),
-            self.secondary.to_string(),
+            "({:X}): meta \"{}:{}\", sib: {}, children: {}, chunks(count: {}, index: {})",
+            *self.identifier,
             self.metadata_length,
             self.metadata_offset,
             self.sibling,
@@ -49,8 +46,7 @@ impl Debug for Table {
 impl Default for Table {
     fn default() -> Self {
         Self {
-            primary: Ecc::INVALID,
-            secondary: Ecc::INVALID,
+            identifier: Identifier::INVALID,
             metadata_length: 0,
             metadata_offset: 0,
             child_count: 0,
@@ -70,14 +66,9 @@ impl Table {
         TableBuilder::new()
     }
 
-    /// Get the primary content type.
-    pub fn primary(&self) -> Ecc {
-        self.primary
-    }
-
-    /// Get the secondary content type.
-    pub fn secondary(&self) -> Ecc {
-        self.secondary
+    /// Get the table identifier.
+    pub fn identifier(&self) -> Identifier {
+        self.identifier
     }
 
     /// Get the metadata length.
@@ -140,8 +131,7 @@ impl Table {
     /// Read a table from the given stream.
     pub fn read<E: ByteOrder>(reader: &mut dyn Read) -> Result<Self> {
         Ok(Self {
-            primary: Ecc::read::<E>(reader)?,
-            secondary: Ecc::read::<E>(reader)?,
+            identifier: Identifier::new(reader.read_u128::<E>()?),
             metadata_length: reader.read_u64::<E>()?,
             metadata_offset: reader.read_u64::<E>()?,
             child_count: reader.read_u32::<E>()?,
@@ -153,8 +143,7 @@ impl Table {
 
     /// Write a table to the given stream.
     pub fn write<E: ByteOrder>(self, writer: &mut dyn Write) -> Result<()> {
-        self.primary.write::<E>(writer)?;
-        self.secondary.write::<E>(writer)?;
+        writer.write_u128::<E>(*self.identifier)?;
         writer.write_u64::<E>(self.metadata_length)?;
         writer.write_u64::<E>(self.metadata_offset)?;
         writer.write_u32::<E>(self.child_count)?;
@@ -179,15 +168,9 @@ impl TableBuilder {
         }
     }
 
-    /// Set the primary content type.
-    pub fn primary(mut self, value: impl Into<Ecc>) -> Self {
-        self.table.primary = value.into();
-        self
-    }
-
-    /// Set the secondary content type.
-    pub fn secondary(mut self, value: impl Into<Ecc>) -> Self {
-        self.table.secondary = value.into();
+    /// Set the identifier.
+    pub fn identifier(mut self, value: Identifier) -> Self {
+        self.table.identifier = value;
         self
     }
 
@@ -235,6 +218,8 @@ impl TableBuilder {
 
 #[cfg(test)]
 mod tests {
+    use crate::Ecc;
+
     use super::*;
 
     #[test]
@@ -245,8 +230,7 @@ mod tests {
     #[test]
     fn test_basics() {
         let table = Table::create()
-            .primary("test1")
-            .secondary(Ecc::INVALID)
+            .identifier((Ecc::from("test1"), Ecc::INVALID).into())
             .metadata_length(1)
             .metadata_offset(2)
             .child_count(3)
@@ -255,8 +239,10 @@ mod tests {
             .chunk_index(6)
             .end();
 
-        assert_eq!(table.primary(), Ecc::new("test1"));
-        assert_eq!(table.secondary(), Ecc::INVALID);
+        assert_eq!(
+            table.identifier().as_ecc2(),
+            (Ecc::new("test1"), Ecc::INVALID)
+        );
         assert_eq!(table.metadata_length(), 1);
         assert_eq!(table.metadata_offset(), 2);
         assert_eq!(table.child_count(), 3);
@@ -269,8 +255,7 @@ mod tests {
     fn test_serialization() {
         let mut buffer = vec![];
         let table = Table::create()
-            .primary("test1")
-            .secondary(Ecc::INVALID)
+            .identifier((Ecc::from("test1"), Ecc::INVALID).into())
             .metadata_length(1)
             .metadata_offset(2)
             .child_count(3)

@@ -1,4 +1,4 @@
-use crate::{Error, Identifier, Result};
+use crate::{Identifier, Result};
 use byteorder::{ByteOrder, ReadBytesExt, WriteBytesExt};
 use std::{
     fmt::Debug,
@@ -32,15 +32,9 @@ impl Chunk {
     pub const SIZE: usize = std::mem::size_of::<Self>();
 
     /// Create a new chunk instance.
-    pub fn new(
-        identifier: impl TryInto<Identifier, Error = Error>,
-        length: u64,
-        offset: u64,
-    ) -> Self {
+    pub fn new(identifier: impl Into<Identifier>, length: u64, offset: u64) -> Self {
         Self {
-            identifier: identifier
-                .try_into()
-                .expect("Expected valid identifier data."),
+            identifier: identifier.into(),
             length,
             offset,
         }

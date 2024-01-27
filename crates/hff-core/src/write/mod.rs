@@ -24,29 +24,19 @@ pub use table_desc::TableDesc;
 mod hff_desc;
 pub use hff_desc::HffDesc;
 
-use crate::{Ecc, Error, Result};
+use crate::{Error, Identifier, Result};
 
 /// Start building a new table.
-pub fn table<'a>(primary: impl Into<Ecc>, secondary: impl Into<Ecc>) -> TableBuilder<'a> {
-    TableBuilder::new(primary.into(), secondary.into())
+pub fn table<'a>(identifier: impl Into<Identifier>) -> TableBuilder<'a> {
+    TableBuilder::new(identifier.into())
 }
 
 /// Build a new chunk.
-pub fn chunk<'a, T>(
-    primary: impl Into<Ecc>,
-    secondary: impl Into<Ecc>,
-    content: T,
-) -> Result<ChunkDesc<'a>>
+pub fn chunk<'a, T>(identifier: impl Into<Identifier>, content: T) -> Result<ChunkDesc<'a>>
 where
-    T: TryInto<DataSource<'a>>,
-    <T as TryInto<DataSource<'a>>>::Error: std::fmt::Debug,
-    Error: From<<T as TryInto<DataSource<'a>>>::Error>,
+    T: TryInto<DataSource<'a>, Error = Error>,
 {
-    Ok(ChunkDesc::new(
-        primary.into(),
-        secondary.into(),
-        content.try_into()?,
-    ))
+    Ok(ChunkDesc::new(identifier.into(), content.try_into()?))
 }
 
 /// Build the structure of the Hff content.

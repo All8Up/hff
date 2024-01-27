@@ -161,27 +161,35 @@ mod tests {
     #[test]
     fn test() {
         let content = hff([
-            table("p0", "s0")
+            table((Ecc::new("p0"), Ecc::new("s0")))
                 .metadata("123")
                 .unwrap()
-                .children([table("p1", "s1")
+                .children([table((Ecc::new("p1"), Ecc::new("s1")))
                     .metadata("1234")
                     .unwrap()
                     .chunks([
-                        chunk("c0", "cs0", "chunk 0").unwrap(),
-                        chunk("c1", "cs1", "chunk 1").unwrap(),
-                        chunk("c2", "cs2", "chunk 2").unwrap(),
+                        chunk((Ecc::new("c0"), Ecc::new("cs0")), "chunk 0").unwrap(),
+                        chunk((Ecc::new("c1"), Ecc::new("cs1")), "chunk 1").unwrap(),
+                        chunk((Ecc::new("c2"), Ecc::new("cs2")), "chunk 2").unwrap(),
                     ])
                     .children([
-                        table("p2", "s2").metadata("12345").unwrap().chunks([]),
-                        table("p3", "s3").metadata("123456").unwrap().chunks([]),
+                        table((Ecc::new("p2"), Ecc::new("s2")))
+                            .metadata("12345")
+                            .unwrap()
+                            .chunks([]),
+                        table((Ecc::new("p3"), Ecc::new("s3")))
+                            .metadata("123456")
+                            .unwrap()
+                            .chunks([]),
                     ])])
                 .chunks([]),
-            table("p4", "s4").metadata("1234567").unwrap(),
-            table("p5", "s5")
+            table((Ecc::new("p4"), Ecc::new("s4")))
+                .metadata("1234567")
+                .unwrap(),
+            table((Ecc::new("p5"), Ecc::new("s5")))
                 .metadata("12345678")
                 .unwrap()
-                .chunks([chunk("c3", "cs3", "chunk 3").unwrap()]),
+                .chunks([chunk((Ecc::new("c3"), Ecc::new("cs3")), "chunk 3").unwrap()]),
         ]);
 
         let mut buffer = vec![];

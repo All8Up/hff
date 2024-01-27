@@ -1,13 +1,11 @@
 use super::{ChunkDesc, DataSource, TableDesc};
-use crate::{Ecc, Error, Result};
+use crate::{Error, Identifier, Result};
 
 /// Builder for tables.
 #[derive(Debug)]
 pub struct TableBuilder<'a> {
-    /// Primary table identifier.
-    primary: Ecc,
-    /// Secondary table identifier.
-    secondary: Ecc,
+    /// The table identifier.
+    identifier: Identifier,
     /// Optional metadata associated with the table.
     metadata: Option<DataSource<'a>>,
     /// Chunks associated with the table..
@@ -18,10 +16,9 @@ pub struct TableBuilder<'a> {
 
 impl<'a> TableBuilder<'a> {
     /// Create a new table builder instance.
-    pub fn new(primary: Ecc, secondary: Ecc) -> Self {
+    pub fn new(identifier: Identifier) -> Self {
         Self {
-            primary,
-            secondary,
+            identifier,
             metadata: None,
             chunks: vec![],
             children: vec![],
@@ -31,9 +28,7 @@ impl<'a> TableBuilder<'a> {
     /// Set the metadata for this table.
     pub fn metadata<T>(mut self, content: T) -> Result<Self>
     where
-        T: TryInto<DataSource<'a>>,
-        <T as TryInto<DataSource<'a>>>::Error: std::fmt::Debug,
-        Error: From<<T as TryInto<DataSource<'a>>>::Error>,
+        T: TryInto<DataSource<'a>, Error = Error>,
     {
         self.metadata = Some(content.try_into()?);
         Ok(self)
@@ -54,8 +49,7 @@ impl<'a> TableBuilder<'a> {
     /// Finish building the table.
     pub fn finish(self) -> TableDesc<'a> {
         TableDesc::new(
-            self.primary,
-            self.secondary,
+            self.identifier,
             self.metadata,
             self.chunks,
             self.children
@@ -65,13 +59,8 @@ impl<'a> TableBuilder<'a> {
         )
     }
 
-    /// Get the primary identifier of the table.
-    pub fn primary(&self) -> Ecc {
-        self.primary
-    }
-
-    /// Get the secondary identifier of the table.
-    pub fn secondary(&self) -> Ecc {
-        self.secondary
+    /// Get the identifier.
+    pub fn identifier(&self) -> Identifier {
+        self.identifier
     }
 }

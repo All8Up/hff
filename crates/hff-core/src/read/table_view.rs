@@ -1,5 +1,5 @@
 use super::{ChunkIter, Hff, TableIter};
-use crate::{ContentInfo, Ecc};
+use crate::{ContentInfo, Identifier};
 use std::fmt::Debug;
 
 /// View of a table.
@@ -45,14 +45,9 @@ impl<'a, T: Debug> TableView<'a, T> {
         self.index
     }
 
-    /// Get the primary identifier.
-    pub fn primary(&self) -> Ecc {
-        self.hff.tables_array()[self.index].primary()
-    }
-
-    /// Get the secondary identifier.
-    pub fn secondary(&self) -> Ecc {
-        self.hff.tables_array()[self.index].secondary()
+    /// Get the identifier.
+    pub fn identifier(&self) -> Identifier {
+        self.hff.tables_array()[self.index].identifier()
     }
 
     /// Get the count of child tables.

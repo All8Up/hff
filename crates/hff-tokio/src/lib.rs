@@ -19,21 +19,23 @@ mod tests {
     #[tokio::test]
     async fn tests() -> Result<()> {
         let content = hff([
-            table("Prime", "Second")
+            table((Ecc::new("Prime"), Ecc::new("Second")))
                 // Metadata and chunks can be pulled from many types of source data.
                 .metadata("Each table can have metadata.")?
                 // Tables can have chunks.
                 .chunks([chunk(
-                    "AChunk",
-                    Ecc::INVALID,
+                    (Ecc::new("AChunk"), Ecc::INVALID),
                     "Each table can have 0..n chunks of data.",
                 )?])
                 // Tables can have child tables.
-                .children([table("Child1", Ecc::INVALID)
+                .children([table((Ecc::new("Child1"), Ecc::INVALID))
                     .metadata("Unique to this table.")?
-                    .chunks([chunk("ThisFile", "Copy", "More data for the chunk.")?])]),
+                    .chunks([chunk(
+                        (Ecc::new("ThisFile"), Ecc::new("Copy")),
+                        "More data for the chunk.",
+                    )?])]),
             // And there can be multiple tables at the root.
-            table("Child2", Ecc::INVALID),
+            table((Ecc::new("Child2"), Ecc::INVALID)),
         ]);
 
         // Use std variation to write into a vector.
@@ -54,7 +56,7 @@ mod tests {
             println!(
                 "{}: {:?} ({})",
                 depth,
-                table.primary(),
+                table.identifier(),
                 std::str::from_utf8(hff.read(&table).await?.as_slice()).unwrap()
             );
 
