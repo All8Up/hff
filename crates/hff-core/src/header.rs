@@ -1,10 +1,10 @@
 //! The file header.
-use crate::{Ecc, Endian, Error, Result, Version, BE, LE, NATIVE_ENDIAN, NE};
+use crate::{Ecc, Endian, Error, IdType, Result, Version, BE, LE, NATIVE_ENDIAN, NE};
 use byteorder::{ByteOrder, ReadBytesExt, WriteBytesExt};
 use std::io::Write;
 
 /// The current version of the format.
-pub const FORMAT_VERSION: Version = Version::new(0, 2);
+pub const FORMAT_VERSION: Version = Version::new(0, 3);
 
 /// The file header.
 #[repr(C)]
@@ -30,11 +30,11 @@ impl Header {
     pub const SIZE: usize = std::mem::size_of::<Self>();
 
     /// Create a new instance.
-    pub fn new(content_type: Ecc, table_count: u32, chunk_count: u32) -> Self {
+    pub fn new(id_type: IdType, content_type: Ecc, table_count: u32, chunk_count: u32) -> Self {
         Self {
             magic: Ecc::HFF_MAGIC,
             version: FORMAT_VERSION,
-            id_type: 0, // TODO: Only supports pairs of Ecc at the moment.
+            id_type: *id_type,
             content_type,
             table_count,
             chunk_count,
@@ -185,10 +185,12 @@ mod tests {
 
     #[test]
     fn validation() {
-        assert!(Header::new(Ecc::new("test"), 0, 0).is_valid());
-        assert!(Header::new(Ecc::new("test"), 0, 0).is_native_endian());
-        assert!(Header::new(Ecc::new("test"), 0, 0).swap_bytes().is_valid());
-        assert!(!Header::new(Ecc::new("test"), 0, 0)
+        assert!(Header::new(IdType::Ecc2, Ecc::new("test"), 0, 0).is_valid());
+        assert!(Header::new(IdType::Ecc2, Ecc::new("test"), 0, 0).is_native_endian());
+        assert!(Header::new(IdType::Ecc2, Ecc::new("test"), 0, 0)
+            .swap_bytes()
+            .is_valid());
+        assert!(!Header::new(IdType::Ecc2, Ecc::new("test"), 0, 0)
             .swap_bytes()
             .is_native_endian());
     }
@@ -197,12 +199,12 @@ mod tests {
     fn serialization() {
         {
             // Create a header, convert to bytes and then recreate from the bytes.
-            let header = Header::new("Test".into(), 1, 2);
+            let header = Header::new(IdType::Ecc2, "Test".into(), 1, 2);
             let buffer = header.clone().to_bytes::<LE>().unwrap();
             let dup: Header = buffer.as_slice().try_into().unwrap();
 
             assert_eq!(dup.magic, Ecc::HFF_MAGIC);
-            assert_eq!(dup.version, Version::new(0, 2));
+            assert_eq!(dup.version, FORMAT_VERSION);
             assert_eq!(dup.content_type, Ecc::new("Test"));
             assert_eq!(dup.table_count, 1);
             assert_eq!(dup.chunk_count, 2);
@@ -210,12 +212,12 @@ mod tests {
 
         {
             // Create a header, convert to bytes and then recreate from the bytes.
-            let header = Header::new("Test".into(), 1, 2);
+            let header = Header::new(IdType::Ecc2, "Test".into(), 1, 2);
             let buffer = header.clone().to_bytes::<BE>().unwrap();
             let dup: Header = buffer.as_slice().try_into().unwrap();
 
             assert_eq!(dup.magic, Ecc::HFF_MAGIC.swap_bytes());
-            assert_eq!(dup.version, Version::new(0, 2));
+            assert_eq!(dup.version, FORMAT_VERSION);
             assert_eq!(dup.content_type, Ecc::new("Test"));
             assert_eq!(dup.table_count, 1);
             assert_eq!(dup.chunk_count, 2);

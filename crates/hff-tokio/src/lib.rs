@@ -6,7 +6,7 @@ pub use hff_core::{
     read::{ChunkView, Hff, TableView},
     utilities,
     write::{chunk, hff, table, ChunkDesc, DataSource, HffDesc, TableBuilder},
-    ByteOrder, ChunkCache, ContentInfo, Ecc, Error, Result, Version, BE, LE, NE, OP,
+    ByteOrder, ChunkCache, ContentInfo, Ecc, Error, IdType, Result, Version, BE, LE, NE, OP,
 };
 
 mod read;
@@ -39,7 +39,7 @@ mod tests {
         // Use std variation to write into a vector.
         let mut buffer = vec![];
         use hff_std::Writer;
-        content.write::<hff_core::NE>("Test", &mut buffer)?;
+        content.write::<hff_core::NE>(IdType::Ecc2, "Test", &mut buffer)?;
 
         // The reader must take ownership of the given item in order to
         // properly function.

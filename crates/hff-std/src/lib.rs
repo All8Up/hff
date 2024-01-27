@@ -13,7 +13,7 @@ pub use hff_core::{
     read::{ChunkView, Hff, TableView},
     utilities,
     write::{chunk, hff, table, ChunkDesc, DataSource, HffDesc, TableBuilder},
-    ByteOrder, ChunkCache, ContentInfo, Ecc, Error, Result, Version, BE, LE, NE, OP,
+    ByteOrder, ChunkCache, ContentInfo, Ecc, Error, IdType, Result, Version, BE, LE, NE, OP,
 };
 
 // Helper traits which provide blanket implementations over the
@@ -241,7 +241,7 @@ mod tests {
             let buffer = vec![];
             let mut writer = std::io::Cursor::new(buffer);
             assert!(content
-                .lazy_write::<hff_core::NE>("Test", &mut writer)
+                .lazy_write::<hff_core::NE>(IdType::Ecc2, "Test", &mut writer)
                 .is_ok());
 
             // Read it back in and iterate.
@@ -255,7 +255,9 @@ mod tests {
             let content = test_table().unwrap();
             let mut buffer = vec![];
 
-            assert!(content.write::<hff_core::OP>("Test", &mut buffer).is_ok());
+            assert!(content
+                .write::<hff_core::OP>(IdType::Ecc2, "Test", &mut buffer)
+                .is_ok());
 
             // Read it back in and iterate.
             let access = crate::read::read(&mut buffer.as_slice()).unwrap();

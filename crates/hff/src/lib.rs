@@ -29,7 +29,7 @@
 //! // The results can be packaged into an output stream.
 //! // This can be anything which supports the std::io::Write trait.
 //! let mut buffer = vec![];
-//! content.write::<NE>("Test", &mut buffer).unwrap();
+//! content.write::<NE>(IdType::Ecc2, "Test", &mut buffer).unwrap();
 //!
 //! // Hff can be read back from anything which supports the std::io::Read
 //! // trait.  In this case we also read all the data into a cache in memory.

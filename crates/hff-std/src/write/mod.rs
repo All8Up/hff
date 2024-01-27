@@ -1,7 +1,7 @@
 use crate::WriteSeek;
 use hff_core::{
     write::{DataArray, DataSource, HffDesc},
-    ByteOrder, Ecc, Header, Result,
+    ByteOrder, Ecc, Header, IdType, Result,
 };
 use std::io::Write;
 
@@ -10,6 +10,7 @@ pub trait Writer {
     /// Write to a stream.
     fn write<E: ByteOrder>(
         self,
+        id_type: IdType,
         content_type: impl Into<Ecc>,
         writer: &mut dyn Write,
     ) -> Result<()>;
@@ -18,6 +19,7 @@ pub trait Writer {
     /// This requires a stream with both Write and Seek capabilities.
     fn lazy_write<E: ByteOrder>(
         self,
+        id_type: IdType,
         content_type: impl Into<Ecc>,
         writer: &mut dyn WriteSeek,
     ) -> Result<()>;
@@ -26,6 +28,7 @@ pub trait Writer {
 impl<'a> Writer for HffDesc<'a> {
     fn write<E: ByteOrder>(
         self,
+        id_type: IdType,
         content_type: impl Into<Ecc>,
         writer: &mut dyn Write,
     ) -> Result<()> {
@@ -33,6 +36,7 @@ impl<'a> Writer for HffDesc<'a> {
         let (mut tables, mut chunks, mut data) = self.finish();
 
         let header = Header::new(
+            id_type,
             content_type.into(),
             tables.len() as u32,
             chunks.len() as u32,
@@ -56,6 +60,7 @@ impl<'a> Writer for HffDesc<'a> {
 
     fn lazy_write<E: ByteOrder>(
         self,
+        id_type: IdType,
         content_type: impl Into<Ecc>,
         mut writer: &mut dyn WriteSeek,
     ) -> Result<()> {
@@ -64,6 +69,7 @@ impl<'a> Writer for HffDesc<'a> {
         let (mut tables, mut chunks, data) = self.finish();
 
         let header = Header::new(
+            id_type,
             content_type.into(),
             tables.len() as u32,
             chunks.len() as u32,
@@ -137,13 +143,18 @@ fn write_data_array(data_array: DataArray, writer: &mut dyn Write) -> Result<Vec
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use hff_core::write::{chunk, hff, table};
+    use hff_core::{
+        write::{chunk, hff, table},
+        IdType,
+    };
 
     #[test]
     fn empty() {
         let content = hff([]);
         let mut buffer = vec![];
-        content.write::<hff_core::LE>("Test", &mut buffer).unwrap();
+        content
+            .write::<hff_core::LE>(IdType::Ecc2, "Test", &mut buffer)
+            .unwrap();
         let _hff = crate::read::inspect(&mut buffer.as_slice()).unwrap();
     }
 
@@ -174,7 +185,9 @@ mod tests {
         ]);
 
         let mut buffer = vec![];
-        content.write::<hff_core::LE>("Test", &mut buffer).unwrap();
+        content
+            .write::<hff_core::LE>(IdType::Ecc2, "Test", &mut buffer)
+            .unwrap();
 
         let hff = crate::read::inspect(&mut buffer.as_slice()).unwrap();
         println!("{:#?}", hff);
