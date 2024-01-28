@@ -1,6 +1,6 @@
 [package]
 name = "hff-tokio"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2021"
 authors = ["All8Up <all8up@gmail.com>"]
 license-file = "LICENSE"
@@ -9,8 +9,8 @@ repository = "https://github.com/All8Up/hff.git"
 readme = "README.md"
 
 [dependencies]
-hff-core = { version = "0.6.0" }
-hff-std = { version = "0.6.0" }
+hff-core = { version = "0.6.1" }
+hff-std = { version = "0.6.1" }
 async-trait = { version = "0.1.75" }
 
 # Support for tokio.
