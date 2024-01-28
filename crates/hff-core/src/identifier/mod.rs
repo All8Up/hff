@@ -6,6 +6,7 @@ use uuid::Uuid;
 /// This has no impact on behavior at all, it is only a
 /// hint to the end user about how to use/view the ID's.
 #[repr(u32)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum IdType {
     /// A simple u128.
     Id = 0,
@@ -61,6 +62,33 @@ impl Identifier {
     /// Create a new instance.
     pub fn new(id: u128) -> Self {
         Self(id)
+    }
+
+    /// Create a string from the identifier formatted to the given type.
+    pub fn to_string(&self, id_type: IdType) -> String {
+        match id_type {
+            IdType::Id => format!("{:X}", self.0),
+            IdType::Ecc2 => {
+                let (p, s): (Ecc, Ecc) = (*self).into();
+                format!("{}:{}", p.to_string(), s.to_string())
+            }
+            IdType::Uuid => {
+                let id: Uuid = (*self).into();
+                format!("{}", id.to_string())
+            }
+            IdType::Au8 => {
+                let chars: [u8; 16] = (*self).into();
+                format!("{:?}", chars)
+            }
+            IdType::EccU64 => {
+                let (ecc, value): (Ecc, u64) = (*self).into();
+                format!("{}:{:X}", ecc.to_string(), value)
+            }
+            IdType::U64s => {
+                let (l, r): (u64, u64) = (*self).into();
+                format!("{:X}:{:X}", l, r)
+            }
+        }
     }
 
     // Conversions back to specific identifier types.

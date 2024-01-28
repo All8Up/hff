@@ -56,3 +56,6 @@ pub mod utilities;
 
 // Re-export byte order.
 pub use byteorder;
+
+// Re-export uuid.
+pub use uuid;

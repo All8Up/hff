@@ -1,5 +1,5 @@
 use super::{DepthFirstIter, TableIter};
-use crate::{Chunk, Ecc, Header, Table, Version};
+use crate::{Chunk, Ecc, Header, IdType, Table, Version};
 use std::{
     fmt::Debug,
     mem::size_of,
@@ -14,6 +14,8 @@ pub struct Hff<T: Debug> {
     native: bool,
     /// The version of the file format.
     version: Version,
+    /// The IdType of the hff.
+    id_type: IdType,
     /// Content type of the hff.
     content_type: Ecc,
     /// The tables found in the header structure.
@@ -35,6 +37,7 @@ impl<T: Debug> Hff<T> {
         Self {
             native: header.is_native_endian(),
             version: header.version(),
+            id_type: header.id_type(),
             content_type: header.content_type(),
             tables: tables.into(),
             chunks: chunks.into(),
@@ -50,6 +53,11 @@ impl<T: Debug> Hff<T> {
     /// Return the version of the file structure the file was read from.
     pub fn version(&self) -> Version {
         self.version
+    }
+
+    /// The type of the ID's used in the hff file.
+    pub fn id_type(&self) -> IdType {
+        self.id_type
     }
 
     /// Get the content type of the container.
