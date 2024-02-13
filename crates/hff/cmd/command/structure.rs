@@ -111,7 +111,7 @@ fn archive_directory<'a, E: ByteOrder>(
         archive_level::<E>(root, path.clone(), structure, compression)?;
 
     // And build the outer table for this level.
-    Ok(table(super::HFF_DIR, Ecc::INVALID)
+    Ok(table((super::HFF_DIR, Ecc::INVALID))
         .metadata(Hierarchical::new(path.display().to_string(), files, hierarchy).to_bytes::<E>()?)?
         .children(tables)
         .chunks(chunks))
@@ -148,7 +148,7 @@ fn archive_level<'a, E: ByteOrder>(
                 let (t, c, f, h) = archive_level::<E>(&root, p.clone(), c, compression)?;
                 hierarchy.push(Hierarchical::new(p.display().to_string(), f, h));
                 tables.push(
-                    table(super::HFF_DIR, Ecc::INVALID)
+                    table((super::HFF_DIR, Ecc::INVALID))
                         .children(t.into_iter())
                         .chunks(c.into_iter()),
                 )
@@ -176,7 +176,7 @@ fn archive_single_file<'a, E: ByteOrder>(
             // The file is not an hff, so just pack it into a chunk.
             let file_path: std::path::PathBuf = file_path.into();
             let chunk = file_to_chunk(compression, file_path)?;
-            Ok(table(super::HFF_FILE, Ecc::INVALID)
+            Ok(table((super::HFF_FILE, Ecc::INVALID))
                 .chunks([chunk])
                 .metadata(
                     Hierarchical::new(file.display().to_string(), vec![], vec![])
@@ -197,7 +197,7 @@ fn hff_to_table<'a, E: ByteOrder>(file: PathBuf, hff: Hff<StdReader>) -> Result<
     // This new table contains the content of the prior hff.
     // At the root level of an hff, it can only contain tables, so
     // this new table has no chunks, only the original children tables.
-    let result = table(super::HFF_EMBEDDED, hff.content_type())
+    let result = table((super::HFF_EMBEDDED, hff.content_type()))
         .metadata(Hierarchical::new(file.display().to_string(), vec![], vec![]).to_bytes::<E>()?)?
         .children(children.into_iter());
 
@@ -211,7 +211,7 @@ fn resolve_table<'a, 'b>(
     // Get all the chunks.
     let mut chunks = vec![];
     for c in t.chunks() {
-        chunks.push(chunk(c.primary(), c.secondary(), hff.get(&c)?)?);
+        chunks.push(chunk(c.identifier(), hff.get(&c)?)?);
     }
 
     // Recursively resolve all child tables.
@@ -221,7 +221,7 @@ fn resolve_table<'a, 'b>(
     }
 
     // And build the whole thing as a table in the archive.
-    Ok(table(t.primary(), t.secondary())
+    Ok(table(t.identifier())
         .chunks(chunks.into_iter())
         .children(children.into_iter()))
 }
@@ -233,9 +233,10 @@ fn file_to_chunk<'a, F: Fn(&Path) -> Option<u32>>(
 ) -> Result<ChunkDesc<'a>> {
     let compression = compression(file_path.as_path().into());
     let chunk = if let Some(compression) = compression {
-        chunk(super::HFF_FILE, super::HFF_LZMA, (compression, file_path))?
+        let size = file_path.metadata()?.len();
+        chunk((super::HFF_FILE, size), (compression, file_path))?
     } else {
-        chunk(super::HFF_FILE, Ecc::INVALID, file_path)?
+        chunk((super::HFF_FILE, Ecc::INVALID), file_path)?
     };
     Ok(chunk)
 }

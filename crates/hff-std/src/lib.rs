@@ -194,17 +194,19 @@ mod tests {
                 assert_eq!(Ecc::new(test_entry.1), secondary);
 
                 #[cfg(feature = "compression")]
-                let (_, secondary): (Ecc, Ecc) = chunk.identifier().into();
-                if secondary == Ecc::new("TRS5") {
-                    let decompressed = decompress(hff.read(&chunk).unwrap()).unwrap();
-                    assert_eq!(decompressed.len(), test_entry.2.len());
-                    assert_eq!(decompressed, Vec::from(test_entry.2.as_bytes()));
-                } else {
-                    assert_eq!(chunk.size(), test_entry.2.len());
-                    assert_eq!(
-                        hff.read(&chunk).unwrap(),
-                        Vec::from(test_entry.2.as_bytes())
-                    );
+                {
+                    let (_, secondary): (Ecc, Ecc) = chunk.identifier().into();
+                    if secondary == Ecc::new("TRS5") {
+                        let decompressed = decompress(hff.read(&chunk).unwrap()).unwrap();
+                        assert_eq!(decompressed.len(), test_entry.2.len());
+                        assert_eq!(decompressed, Vec::from(test_entry.2.as_bytes()));
+                    } else {
+                        assert_eq!(chunk.size(), test_entry.2.len());
+                        assert_eq!(
+                            hff.read(&chunk).unwrap(),
+                            Vec::from(test_entry.2.as_bytes())
+                        );
+                    }
                 }
                 #[cfg(not(feature = "compression"))]
                 {

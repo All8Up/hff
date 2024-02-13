@@ -1,6 +1,6 @@
 use super::Result;
 use clap::Args;
-use hff_std::{hff, Ecc, Writer, BE, LE, NE};
+use hff_std::{hff, Ecc, IdType, Writer, BE, LE, NE};
 use log::trace;
 use normpath::PathExt;
 use std::{fs::File, io::Write, path::PathBuf};
@@ -64,12 +64,12 @@ impl Pack {
         let mut output = File::create(&self.output)?;
         // And write in the selected endian or native.
         if !(self.little_endian || self.big_endian) {
-            hff([root]).write::<NE>(HFF_ARCHIVE, &mut output)?;
+            hff([root]).write::<NE>(IdType::EccU64, HFF_ARCHIVE, &mut output)?;
         } else {
             if self.big_endian {
-                hff([root]).write::<BE>(HFF_ARCHIVE, &mut output)?;
+                hff([root]).write::<BE>(IdType::EccU64, HFF_ARCHIVE, &mut output)?;
             } else if self.little_endian {
-                hff([root]).write::<LE>(HFF_ARCHIVE, &mut output)?;
+                hff([root]).write::<LE>(IdType::EccU64, HFF_ARCHIVE, &mut output)?;
             }
         }
         output.flush()?;

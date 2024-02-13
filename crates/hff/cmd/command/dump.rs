@@ -69,10 +69,9 @@ impl Dump {
     ) -> Result<()> {
         // Always print out the table information.
         println!(
-            "{} ({:<8} | {:<8} : children: {} chunks: {})",
+            "{} ({} : children: {} chunks: {})",
             self.indent(depth),
-            table.primary().to_string(),
-            table.secondary().to_string(),
+            table.identifier().to_string(hff.id_type()),
             table.child_count(),
             table.chunk_count()
         );
@@ -84,7 +83,7 @@ impl Dump {
 
         // Print out chunk types if desired.
         if self.chunk_types {
-            self.dump_chunk_types(depth, table)?;
+            self.dump_chunk_types(hff.id_type(), depth, table)?;
         }
 
         Ok(())
@@ -136,13 +135,17 @@ impl Dump {
     }
 
     /// Dump out the chunk types if any.
-    fn dump_chunk_types(&self, depth: usize, table: &TableView<'_, StdReader>) -> Result<()> {
+    fn dump_chunk_types(
+        &self,
+        id_type: IdType,
+        depth: usize,
+        table: &TableView<'_, StdReader>,
+    ) -> Result<()> {
         for chunk in table.chunks() {
             println!(
-                " {} [{:<8} | {:<8} Len: {}]",
+                " {} [{} Len: {}]",
                 self.indent(depth),
-                chunk.primary().to_string(),
-                chunk.secondary().to_string(),
+                chunk.identifier().to_string(id_type),
                 chunk.len()
             );
         }

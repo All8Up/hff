@@ -27,13 +27,13 @@ impl Unpack {
             // Figure out if the archive is a single file
             // or a directory.
             if let Some((_, first)) = hff.depth_first().next() {
-                if first.primary() == super::HFF_DIR {
+                if first.identifier().as_eccu64().0 == super::HFF_DIR {
                     trace!("Found an archived directory.");
                     self.unpack_directory(hff)
-                } else if first.primary() == super::HFF_FILE {
+                } else if first.identifier().as_eccu64().0 == super::HFF_FILE {
                     trace!("Found an archived file.");
                     self.unpack_file(hff)
-                } else if first.primary() == super::HFF_EMBEDDED {
+                } else if first.identifier().as_eccu64().0 == super::HFF_EMBEDDED {
                     trace!("Found an archived embedded hff.");
                     self.unpack_hff(hff)
                 } else {
@@ -115,8 +115,9 @@ impl Unpack {
         table: &TableView<'_, StdReader>,
     ) -> Result<()> {
         for (index, chunk) in table.chunks().into_iter().enumerate() {
-            if chunk.primary() == super::HFF_FILE {
-                if chunk.secondary() == super::HFF_LZMA {
+            let (primary, uncompressed_size) = chunk.identifier().as_eccu64();
+            if primary == super::HFF_FILE {
+                if uncompressed_size > 0 {
                     // Read from the chunk.
                     let reader: &mut dyn Read = &mut *hff.read(&chunk)?;
                     let mut buffer = vec![0; chunk.len() as usize];
