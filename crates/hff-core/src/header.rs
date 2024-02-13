@@ -15,6 +15,10 @@ pub struct Header {
     /// Version of the file format.
     version: Version,
     /// Identification type for tables and chunks.
+    /// NOTE: This is in no way enforced, it is simply a hint for viewers to
+    /// use when displaying the ID's.  Some formats, archives for instance,
+    /// will use a mix of identifiers and this will be set to the most common
+    /// id type.
     id_type: u32,
     /// The overall content type of this file.
     /// Unlike table and chunk ID's, this is always an 8 byte character code.
