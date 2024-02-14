@@ -3,7 +3,7 @@
 
 // Reexport needed types.
 #[cfg(feature = "compression")]
-pub use hff_core::read::decompress;
+pub use hff_core::read::{decompress, decompress_exact};
 
 // Pull in core if special behavior is needed.
 pub use hff_core;

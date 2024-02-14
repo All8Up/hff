@@ -5,3 +5,15 @@ pub trait ContentInfo {
     /// Offset into the overall source.
     fn offset(&self) -> u64;
 }
+
+// Helper to use content info from provided data.
+// Not all ways of access the chunks will be through the views.
+impl ContentInfo for (u64, u64) {
+    fn len(&self) -> u64 {
+        self.0
+    }
+
+    fn offset(&self) -> u64 {
+        self.1
+    }
+}

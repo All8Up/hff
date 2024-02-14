@@ -17,6 +17,11 @@ impl<'a, T: Debug> ChunkIter<'a, T> {
             count,
         }
     }
+
+    /// Get the chunk index in the overall table.
+    pub fn index(&self) -> usize {
+        self.current as usize
+    }
 }
 
 impl<'a, T: Debug> Iterator for ChunkIter<'a, T> {

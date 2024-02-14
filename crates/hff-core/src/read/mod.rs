@@ -22,7 +22,7 @@ pub use chunk_iter::ChunkIter;
 #[cfg(feature = "compression")]
 mod decompress;
 #[cfg(feature = "compression")]
-pub use decompress::decompress;
+pub use decompress::{decompress, decompress_exact};
 
 mod hff;
 pub use hff::Hff;
